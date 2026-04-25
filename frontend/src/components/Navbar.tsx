@@ -73,8 +73,10 @@ const Navbar = () => {
             alt="EduBag Logo"
             width={100}
             height={40}
-            style={{ height: "auto" }}
-            className="h-8 md:h-10 w-auto object-contain"
+            priority
+            loading="eager"
+            style={{ width: "auto", height: "auto" }}
+            className="h-8 md:h-10 object-contain"
           />
         </Link>
 

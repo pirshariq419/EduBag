@@ -79,10 +79,10 @@ export default function Home() {
             </div>
 
             <div className="pt-4 flex flex-wrap items-center justify-center lg:justify-start gap-8 opacity-60 grayscale dark:invert transition-all hover:grayscale-0">
-               <img src="/images/uok.jpg" alt="UoK" className="h-8 object-contain" />
-               <img src="/images/skims.jpg" alt="SKIMS" className="h-8 object-contain" />
-               <img src="/images/nitsri.jpg" alt="NIT" className="h-8 object-contain" />
-               <img src="/images/iitjmu.jpg" alt="IIT" className="h-8 object-contain" />
+               <img src="/images/uok.jpg" alt="UoK" className="h-8 object-contain" loading="eager" />
+               <img src="/images/skims.jpg" alt="SKIMS" className="h-8 object-contain" loading="eager" />
+               <img src="/images/nitsri.jpg" alt="NIT" className="h-8 object-contain" loading="eager" />
+               <img src="/images/iitjmu.jpg" alt="IIT" className="h-8 object-contain" loading="eager" />
             </div>
           </motion.div>
 
