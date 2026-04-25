@@ -13,11 +13,20 @@ exports.register = async (req, res, next) => {
   try {
     const { name, email, phone, password, examTarget } = req.body;
     
-    if (!email && !phone) {
+    // Clean inputs: convert empty strings to undefined so sparse index works
+    const userData = {
+      name,
+      password,
+      examTarget,
+      email: email && email.trim() !== "" ? email : undefined,
+      phone: phone && phone.trim() !== "" ? phone : undefined
+    };
+
+    if (!userData.email && !userData.phone) {
       return next(new ErrorResponse('Please provide either an email or phone number', 400));
     }
 
-    const user = await User.create({ name, email, phone, password, examTarget });
+    const user = await User.create(userData);
     sendTokenResponse(user, 201, res);
   } catch (error) {
     next(error);
@@ -82,9 +91,9 @@ exports.updateDetails = async (req, res, next) => {
   try {
     const fieldsToUpdate = {
       name: req.body.name,
-      email: req.body.email,
-      examTarget: req.body.examTarget,
-      phone: req.body.phone
+      email: req.body.email && req.body.email.trim() !== "" ? req.body.email : undefined,
+      phone: req.body.phone && req.body.phone.trim() !== "" ? req.body.phone : undefined,
+      examTarget: req.body.examTarget
     };
 
     const user = await User.findByIdAndUpdate(req.user.id, fieldsToUpdate, {
