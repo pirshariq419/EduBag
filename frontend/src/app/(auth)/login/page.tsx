@@ -4,11 +4,11 @@ import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
-import { Eye, EyeOff, Lock, ArrowRight, Mail } from "lucide-react";
+import { Eye, EyeOff, Lock, ArrowRight, Mail, Phone } from "lucide-react";
 import { motion } from "framer-motion";
 
 export default function LoginPage() {
-  const [email, setEmail] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const { login, loading, error, clearError } = useAuthStore();
@@ -16,8 +16,7 @@ export default function LoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Frontend login now strictly uses email to match admin security
-    await login(email, password);
+    await login(identifier, password);
     const token = localStorage.getItem("edubag_token");
     if (token) router.push("/dashboard");
   };
@@ -49,17 +48,21 @@ export default function LoginPage() {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-1">
-              <label className="block text-sm font-bold text-[#2d2f31] dark:text-white">Email Address</label>
+              <label className="block text-sm font-bold text-[#2d2f31] dark:text-white">Email or Phone</label>
               <div className="relative">
                 <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="Email Address"
+                  type="text"
+                  value={identifier}
+                  onChange={(e) => setIdentifier(e.target.value)}
+                  placeholder="Email or Phone Number"
                   required
                   className="w-full px-4 py-3 pl-10 rounded-md border border-[#2d2f31] dark:border-white/20 bg-transparent focus:outline-none focus:ring-1 focus:ring-[#2d2f31] dark:focus:ring-white transition text-sm font-medium dark:text-white"
                 />
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                {identifier.includes("@") ? (
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                ) : (
+                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                )}
               </div>
             </div>
 

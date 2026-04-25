@@ -8,7 +8,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { 
   User, Settings as SettingsIcon, Save, Loader2, 
   Shield, CreditCard, ChevronLeft, Crown, Target,
-  Bell, Key, LogOut, CheckCircle2, AlertCircle
+  Bell, Key, LogOut, CheckCircle2, AlertCircle,
+  Mail, Phone
 } from "lucide-react";
 import Link from "next/link";
 
@@ -22,6 +23,8 @@ export default function SettingsPage() {
   const [success, setSuccess] = useState(false);
   const [form, setForm] = useState({
     name: "",
+    email: "",
+    phone: "",
     examTarget: "General"
   });
 
@@ -29,6 +32,8 @@ export default function SettingsPage() {
     if (user) {
       setForm({
         name: user.name,
+        email: user.email || "",
+        phone: user.phone || "",
         examTarget: user.examTarget || "General"
       });
     }
@@ -149,7 +154,10 @@ export default function SettingsPage() {
                       </div>
                       <div>
                         <h2 className="text-2xl font-black tracking-tight mb-1">{user.name}</h2>
-                        <p className="text-slate-500 font-bold text-sm">{user.email}</p>
+                        <div className="flex flex-col gap-1">
+                          {user.email && <p className="text-slate-500 font-bold text-sm">{user.email}</p>}
+                          {user.phone && <p className="text-slate-500 font-bold text-sm">{user.phone}</p>}
+                        </div>
                       </div>
                     </div>
 
@@ -169,19 +177,44 @@ export default function SettingsPage() {
                         </div>
 
                         <div className="space-y-3">
+                          <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 px-1">Email Address</label>
+                          <div className="relative group">
+                            <Mail className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 group-focus-within:text-indigo-400 transition-colors" />
+                            <input 
+                              type="email"
+                              value={form.email}
+                              onChange={(e) => setForm({...form, email: e.target.value})}
+                              className="w-full pl-14 pr-6 py-5 rounded-2xl bg-white/5 border border-white/10 focus:border-indigo-500 outline-none font-bold text-sm transition-all"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="space-y-3">
+                          <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 px-1">Phone Number</label>
+                          <div className="relative group">
+                            <Phone className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 group-focus-within:text-indigo-400 transition-colors" />
+                            <input 
+                              value={form.phone}
+                              onChange={(e) => setForm({...form, phone: e.target.value})}
+                              className="w-full pl-14 pr-6 py-5 rounded-2xl bg-white/5 border border-white/10 focus:border-indigo-500 outline-none font-bold text-sm transition-all"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="space-y-3">
                           <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 px-1">Academic Path</label>
                           <div className="relative group">
                             <Target className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 group-focus-within:text-indigo-400 transition-colors" />
                             <select 
                               value={form.examTarget}
                               onChange={(e) => setForm({...form, examTarget: e.target.value})}
-                              className="w-full pl-14 pr-12 py-5 rounded-2xl bg-white/5 border border-white/10 focus:border-indigo-500 outline-none font-bold text-sm transition-all appearance-none"
+                              className="w-full pl-14 pr-12 py-5 rounded-2xl bg-white/5 border border-white/10 focus:border-indigo-500 outline-none font-bold text-sm transition-all appearance-none text-white"
                             >
-                              <option className="bg-[#1a1b23]">General</option>
-                              <option className="bg-[#1a1b23]">NEET UG</option>
-                              <option className="bg-[#1a1b23]">JEE Mains</option>
-                              <option className="bg-[#1a1b23]">JKBOSE 12th</option>
-                              <option className="bg-[#1a1b23]">JKBOSE 10th</option>
+                              <option className="bg-[#1a1b23]" value="General">General</option>
+                              <option className="bg-[#1a1b23]" value="NEET">NEET UG</option>
+                              <option className="bg-[#1a1b23]" value="JEE">JEE Mains</option>
+                              <option className="bg-[#1a1b23]" value="BOARDS">JKBOSE / Boards</option>
+                              <option className="bg-[#1a1b23]" value="OTHER">Other Exams</option>
                             </select>
                           </div>
                         </div>

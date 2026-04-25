@@ -188,7 +188,10 @@ const Navbar = () => {
                 Dashboard
               </Link>
               <button
-                onClick={logout}
+                onClick={() => {
+                  logout();
+                  router.push("/");
+                }}
                 className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-full"
                 title="Logout"
               >
@@ -264,7 +267,19 @@ const Navbar = () => {
                 </div>
                 <hr className="border-slate-100 dark:border-white/5" />
                 {mounted && user ? (
-                  <Link href="/dashboard" onClick={() => setIsOpen(false)} className="block text-center py-3 bg-slate-900 text-white rounded-md font-bold">Dashboard</Link>
+                  <div className="space-y-4">
+                    <Link href="/dashboard" onClick={() => setIsOpen(false)} className="block text-center py-3 bg-slate-900 text-white dark:bg-white dark:text-slate-900 rounded-md font-bold">Dashboard</Link>
+                    <button 
+                      onClick={() => {
+                        logout();
+                        setIsOpen(false);
+                        router.push("/");
+                      }} 
+                      className="w-full py-3 border border-red-500 text-red-500 text-center rounded-md font-bold"
+                    >
+                      Log Out
+                    </button>
+                  </div>
                 ) : (
                   <div className="grid grid-cols-2 gap-4">
                     <Link href="/login" onClick={() => setIsOpen(false)} className="py-3 border border-slate-900 text-slate-900 dark:border-white dark:text-white text-center rounded-md font-bold">Log in</Link>

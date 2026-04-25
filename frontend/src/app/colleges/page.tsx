@@ -73,19 +73,19 @@ export default function CollegesPage() {
       <div className="absolute top-[-10%] right-[-10%] w-96 h-96 bg-purple-500/10 rounded-full blur-[120px] pointer-events-none" />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
-        <div className="text-center mb-16 pt-10">
+        <div className="text-center mb-10 md:mb-16 pt-6 md:pt-10">
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 text-xs font-black uppercase tracking-widest border border-indigo-100 dark:border-indigo-500/20 shadow-sm mb-6"
+            className="inline-flex items-center gap-2 px-3 py-1.5 md:px-4 md:py-2 rounded-full bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 text-[10px] md:text-xs font-black uppercase tracking-widest border border-indigo-100 dark:border-indigo-500/20 shadow-sm mb-4 md:mb-6"
           >
-            <Sparkles className="w-4 h-4" /> Higher Education
+            <Sparkles className="w-3 md:w-4 h-3 md:h-4" /> Higher Education
           </motion.div>
           <motion.h1 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="text-4xl sm:text-5xl md:text-7xl font-black tracking-tight text-slate-900 dark:text-white mb-6"
+            className="text-4xl md:text-7xl font-black tracking-tight text-slate-900 dark:text-white mb-4 md:mb-6 px-4"
           >
             Institution <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-400 dark:to-purple-400">Explorer</span>
           </motion.h1>
@@ -93,41 +93,41 @@ export default function CollegesPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            className="text-lg text-slate-600 dark:text-slate-400 max-w-2xl mx-auto font-medium leading-relaxed"
+            className="text-base md:text-lg text-slate-600 dark:text-slate-400 max-w-2xl mx-auto font-medium leading-relaxed px-6"
           >
             Explore the best medical, engineering, and general degree colleges across Jammu and Kashmir to plan your academic journey.
           </motion.p>
         </div>
 
         {/* Search & Tabs Controls */}
-        <div className="mb-12 space-y-8">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+        <div className="mb-8 md:mb-12 space-y-6 md:space-y-8">
+          <div className="flex flex-col lg:flex-row items-center justify-between gap-6">
             {/* Tabs */}
-            <div className="flex items-center p-1.5 bg-white dark:bg-slate-900 rounded-[1.5rem] border border-slate-200 dark:border-white/10 shadow-sm overflow-x-auto max-w-full no-scrollbar">
+            <div className="flex items-center p-1 md:p-1.5 bg-white dark:bg-slate-900 rounded-2xl md:rounded-[1.5rem] border border-slate-200 dark:border-white/10 shadow-sm overflow-x-auto w-full lg:w-auto no-scrollbar pb-1 md:pb-1.5">
               {TABS.map((tab) => (
                 <button
                   key={tab.name}
                   onClick={() => setActiveTab(tab.name)}
-                  className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-xs font-black uppercase tracking-widest transition-all whitespace-nowrap ${
+                  className={`flex items-center gap-2 px-4 py-2.5 md:px-6 md:py-3 rounded-xl md:rounded-2xl text-[10px] md:text-xs font-black uppercase tracking-widest transition-all whitespace-nowrap ${
                     activeTab === tab.name 
                     ? "bg-indigo-600 text-white shadow-lg shadow-indigo-500/30" 
                     : "text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800"
                   }`}
                 >
-                  <tab.icon className="w-4 h-4" />
+                  <tab.icon className="w-3.5 md:w-4 h-3.5 md:h-4" />
                   {tab.name}
                 </button>
               ))}
             </div>
 
             {/* Search */}
-            <div className="relative w-full md:w-80 group">
+            <div className="relative w-full lg:w-80 group">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-indigo-500 transition-colors" />
               <input 
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search by name or city..."
-                className="w-full pl-11 pr-4 py-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 focus:border-indigo-500 outline-none font-bold text-sm text-slate-700 dark:text-slate-200 shadow-sm group-hover:shadow-md transition-all"
+                className="w-full pl-11 pr-4 py-3.5 md:py-4 rounded-xl md:rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 focus:border-indigo-500 outline-none font-bold text-sm text-slate-700 dark:text-slate-200 shadow-sm group-hover:shadow-md transition-all"
               />
             </div>
           </div>

@@ -82,6 +82,7 @@ exports.updateDetails = async (req, res, next) => {
   try {
     const fieldsToUpdate = {
       name: req.body.name,
+      email: req.body.email,
       examTarget: req.body.examTarget,
       phone: req.body.phone
     };
