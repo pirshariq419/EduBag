@@ -1,0 +1,21 @@
+{
+  "name": "edubag-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently \"cd backend && npm run dev\" \"cd frontend && npm run dev\" \"cd admin-dashboard && npm run dev\"",
+    "dev:frontend": "cd frontend && npm run dev",
+    "dev:backend": "cd backend && npm run dev",
+    "dev:admin": "cd admin-dashboard && npm run dev",
+    "install-all": "npm install && cd backend && npm install && cd ../frontend && npm install && cd ../admin-dashboard && npm install",
+    "build:frontend": "cd frontend && npm run build",
+    "build:admin": "cd admin-dashboard && npm run build",
+    "build-all": "npm run build:frontend && npm run build:admin",
+    "start:frontend": "cd frontend && npm start",
+    "start:backend": "cd backend && npm start",
+    "start:admin": "cd admin-dashboard && npm start"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
+}
