@@ -321,7 +321,7 @@ export default function PYQPage() {
                     alt="JKBOSE" 
                     width={90} 
                     height={90} 
-                    style={{ height: "auto" }}
+                    style={{ width: "auto", height: "auto" }}
                     className="object-contain"
                     onError={(e) => { (e.target as HTMLImageElement).src = "https://via.placeholder.com/90?text=JKBOSE"; }}
                   />
@@ -408,7 +408,7 @@ export default function PYQPage() {
                         alt={cat.name || "Exam"} 
                         width={32} 
                         height={32} 
-                        style={{ height: "auto" }}
+                        style={{ width: "auto", height: "auto" }}
                         className="object-contain"
                         onError={(e) => { (e.target as HTMLImageElement).src = "https://via.placeholder.com/32?text=" + (cat.name ? cat.name[0] : "E"); }}
                       />
