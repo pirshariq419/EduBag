@@ -6,8 +6,8 @@ import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
 import { 
-  LayoutDashboard, LogOut, Search,  
-  Menu, X, BookOpen, GraduationCap, ChevronRight, UserCircle 
+  Menu, X, BookOpen, GraduationCap, ChevronRight, UserCircle, 
+  Settings as SettingsIcon, LayoutDashboard, LogOut, Search 
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -180,19 +180,40 @@ const Navbar = () => {
 
         <div className="flex items-center gap-2 md:gap-3 ml-auto">
           {mounted && user ? (
-            <div className="flex items-center gap-2 md:gap-3">
+            <div className="hidden md:flex items-center gap-3">
               <Link
                 href="/dashboard"
-                className="hidden xs:flex items-center gap-2 px-4 py-2 text-sm font-bold border border-slate-900 dark:border-white rounded-md hover:bg-slate-50 dark:hover:bg-white/5 transition-all"
+                className="flex items-center gap-2 group"
               >
-                Dashboard
+                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-sm font-black shadow-sm group-hover:scale-105 transition-transform overflow-hidden">
+                  {user.avatar ? (
+                    <img src={user.avatar} alt="Profile" className="w-full h-full object-cover" />
+                  ) : (
+                    user.name.charAt(0).toUpperCase()
+                  )}
+                </div>
+                <div className="hidden xl:block">
+                  <p className="text-xs font-black text-slate-900 dark:text-white leading-none">{user.name.split(' ')[0]}</p>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">My Account</p>
+                </div>
               </Link>
+              
+              <div className="h-4 w-px bg-slate-200 dark:bg-white/10 mx-1 hidden xs:block" />
+              
+              <Link
+                href="/settings"
+                className="p-2 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors hidden xs:block"
+                title="Settings"
+              >
+                <SettingsIcon className="w-5 h-5" />
+              </Link>
+
               <button
                 onClick={() => {
                   logout();
                   router.push("/");
                 }}
-                className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-full"
+                className="p-2 text-slate-400 hover:text-red-500 transition-colors"
                 title="Logout"
               >
                 <LogOut className="w-5 h-5" />

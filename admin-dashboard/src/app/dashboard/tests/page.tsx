@@ -145,8 +145,7 @@ export default function ManageTestsPage() {
             <input 
               value={search} 
               onChange={(e) => setSearch(e.target.value)} 
-              placeholder="Search tests..." 
-              className="pl-11 pr-4 py-2 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none w-72" 
+              className="pl-11 pr-4 py-2 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none w-full md:w-72" 
             />
           </div>
           <button 
@@ -209,15 +208,15 @@ export default function ManageTestsPage() {
 
       {/* Modal Builder */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center p-4 pt-10 sm:p-4">
           <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setShowModal(false)} />
           <div className="relative bg-white w-full max-w-4xl h-[90vh] rounded-[2.5rem] shadow-2xl flex flex-col overflow-hidden">
-            <div className="px-8 py-6 border-b border-slate-100 flex items-center justify-between">
+            <div className="px-4 md:px-8 py-4 md:py-6 border-b border-slate-100 flex items-center justify-between shrink-0">
               <h2 className="text-2xl font-black text-slate-900">{editingId ? "Edit Mock Test" : "Create New Mock Test"}</h2>
               <button onClick={() => setShowModal(false)} className="p-2 hover:bg-slate-100 rounded-full text-slate-400"><X className="w-6 h-6"/></button>
             </div>
             
-            <div className="flex-1 overflow-y-auto p-8">
+            <div className="flex-1 overflow-y-auto p-4 md:p-8">
               <form id="test-form" onSubmit={handleSubmit} className="space-y-8">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-1.5">
@@ -266,9 +265,12 @@ export default function ManageTestsPage() {
                           
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             {[0, 1, 2, 3].map((optIndex) => (
-                              <div key={optIndex} className={`flex items-center gap-3 p-2 rounded-xl border ${q.correctAnswerIndex === optIndex ? 'border-emerald-500 bg-emerald-50' : 'border-slate-200 bg-white'}`}>
-                                <input type="radio" name={`correct-${qIndex}`} checked={q.correctAnswerIndex === optIndex} onChange={() => updateQuestion(qIndex, 'correctAnswerIndex', optIndex)} className="w-4 h-4 accent-emerald-500 ml-2" />
+                              <div key={optIndex} className={`flex items-center gap-3 p-2 rounded-xl border transition-all ${q.correctAnswerIndex === optIndex ? 'border-emerald-500 bg-emerald-50 shadow-sm shadow-emerald-100' : 'border-slate-200 bg-white hover:border-indigo-300'}`}>
+                                <div className="flex flex-col items-center justify-center pl-2" title="Mark as correct answer">
+                                  <input type="radio" name={`correct-${qIndex}`} checked={q.correctAnswerIndex === optIndex} onChange={() => updateQuestion(qIndex, 'correctAnswerIndex', optIndex)} className="w-4 h-4 accent-emerald-500 cursor-pointer" />
+                                </div>
                                 <input required value={q.options[optIndex]} onChange={e => updateOption(qIndex, optIndex, e.target.value)} placeholder={`Option ${optIndex + 1}`} className="flex-1 bg-transparent outline-none text-sm font-medium" />
+                                {q.correctAnswerIndex === optIndex && <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest px-2 bg-emerald-200/50 rounded-md py-0.5">Correct</span>}
                               </div>
                             ))}
                           </div>

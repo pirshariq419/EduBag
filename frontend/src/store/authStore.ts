@@ -11,6 +11,7 @@ interface User {
   isPremium: boolean;
   savedResources: string[];
   createdAt?: string;
+  avatar?: string | null;
 }
 
 interface AuthState {
@@ -19,7 +20,7 @@ interface AuthState {
   loading: boolean;
   error: string | null;
   login: (identifier: string, password: string) => Promise<void>;
-  register: (name: string, email: string, phone: string, password: string, examTarget: string) => Promise<void>;
+  register: (name: string, email: string, phone: string, password: string, examTarget: string, avatar?: string) => Promise<void>;
   loadUser: () => Promise<void>;
   setUser: (user: User | null) => void;
   logout: () => void;
@@ -48,10 +49,10 @@ export const useAuthStore = create<AuthState>((set) => ({
     }
   },
 
-  register: async (name, email, phone, password, examTarget) => {
+  register: async (name, email, phone, password, examTarget, avatar) => {
     try {
       set({ loading: true, error: null });
-      const res = await api.post('/auth/register', { name, email, phone, password, examTarget });
+      const res = await api.post('/auth/register', { name, email, phone, password, examTarget, avatar });
       const { token } = res.data;
       localStorage.setItem('edubag_token', token);
       set({ token, loading: false });

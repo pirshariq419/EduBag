@@ -116,10 +116,10 @@ export default function CollegesPage() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search colleges..."
-              className="input pl-11 w-72"
+              className="input pl-11 w-full md:w-72"
             />
           </div>
-          <button onClick={() => { setEditingId(null); setShowModal(true); }} className="btn-primary flex items-center gap-2">
+          <button onClick={() => { setEditingId(null); setForm({ name: "", location: "J&K, India", image: "", websiteUrl: "", description: "" }); setShowModal(true); }} className="btn-primary flex items-center gap-2">
             <Plus className="w-4 h-4" /> Add College
           </button>
         </div>
@@ -183,9 +183,9 @@ export default function CollegesPage() {
 
       {/* Modal */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(8px)" }}>
-          <div className="w-full max-w-lg animate-fadeUp" style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "1.75rem" }}>
-            <div className="flex items-center justify-between px-7 py-5" style={{ borderBottom: "1px solid var(--border)" }}>
+        <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center p-4 pt-10 sm:p-4" style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(8px)" }}>
+          <div className="w-full max-w-lg animate-fadeUp flex flex-col max-h-[85vh]" style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "1.75rem" }}>
+            <div className="flex items-center justify-between px-4 md:px-7 py-5 shrink-0" style={{ borderBottom: "1px solid var(--border)" }}>
               <div>
                 <h2 className="text-lg font-black text-white">{editingId ? "Edit College" : "Add New College"}</h2>
                 <p className="text-xs mt-0.5" style={{ color: "#475569" }}>Manage institution details and links</p>
@@ -195,7 +195,7 @@ export default function CollegesPage() {
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="px-7 py-6 space-y-5">
+            <form onSubmit={handleSubmit} className="px-4 md:px-7 py-6 space-y-5 overflow-y-auto">
               <div className="space-y-1.5">
                 <label className="text-xs font-black uppercase tracking-widest" style={{ color: "#475569" }}>College Name</label>
                 <input required value={form.name} onChange={(e) => f("name", e.target.value)}

@@ -10,7 +10,8 @@ const UserSchema = new mongoose.Schema({
   examTarget: { type: String, enum: ['JEE', 'NEET', 'BOARDS', 'OTHER', 'N/A'], default: 'N/A' },
   preferences: [String],
   savedResources: [{ type: mongoose.Schema.ObjectId, ref: 'Note' }],
-  subscriptionEnd: Date
+  subscriptionEnd: Date,
+  avatar: { type: String, default: null }
 }, { timestamps: true });
 
 // Encrypt password using bcrypt

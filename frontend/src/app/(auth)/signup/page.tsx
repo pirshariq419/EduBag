@@ -4,41 +4,76 @@ import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
-import { Eye, EyeOff, Target, ArrowRight, User as UserIcon, Phone, Mail } from "lucide-react";
+import api from "@/lib/api";
+import { Eye, EyeOff, Target, ArrowRight, User as UserIcon, Phone, Mail, Camera, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function SignupPage() {
   const [name, setName] = useState("");
-  const [identifier, setIdentifier] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [examTarget, setExamTarget] = useState("N/A");
   const [showPassword, setShowPassword] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   
-  const { register, loading, error, clearError } = useAuthStore();
+  const [avatar, setAvatar] = useState<string | null>(null);
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
+  
+  const { register, loading, error, clearError, loadUser } = useAuthStore();
   const router = useRouter();
+
+  const handleAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Just show a local preview for now
+    setAvatarFile(file);
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setAvatar(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!identifier) {
-      alert("Please provide an email or phone number.");
+    if (!email && !phone) {
+      alert("Please provide either an email or phone number.");
       return;
     }
 
-    // Detection logic
-    let email = "";
-    let phone = "";
-    const isEmail = identifier.includes("@");
-    
-    if (isEmail) {
-      email = identifier;
-    } else {
-      phone = identifier;
-    }
+    try {
+      // 1. Register the user
+      await register(name, email, phone, password, examTarget);
+      
+      // Check if registration was successful (token exists)
+      const token = localStorage.getItem("edubag_token");
+      if (!token) return;
 
-    await register(name, email, phone, password, examTarget);
-    const token = localStorage.getItem("edubag_token");
-    if (token) router.push("/dashboard");
+      // 2. If there's an avatar file, upload it now that we are logged in
+      if (avatarFile) {
+        setUploading(true);
+        const formData = new FormData();
+        formData.append("file", avatarFile);
+        formData.append("type", "avatar");
+
+        const res = await api.post("/uploads", formData, {
+          headers: { "Content-Type": "multipart/form-data" }
+        });
+        
+        // 3. Update user details with the uploaded avatar URL
+        await api.put("/auth/updatedetails", { avatar: res.data.data });
+        await loadUser();
+      }
+
+      router.push("/dashboard");
+    } catch (err) {
+      console.error("Signup error:", err);
+    } finally {
+      setUploading(false);
+    }
   };
 
   return (
@@ -67,6 +102,28 @@ export default function SignupPage() {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Avatar Upload */}
+            <div className="flex flex-col items-center mb-6">
+              <div className="relative group">
+                <div className="w-20 h-20 rounded-full bg-gray-100 dark:bg-white/5 border-2 border-dashed border-gray-300 dark:border-white/20 flex items-center justify-center overflow-hidden transition-all group-hover:border-[#a435f0]">
+                  {avatar ? (
+                    <img src={avatar} alt="Preview" className="w-full h-full object-cover" />
+                  ) : (
+                    <UserIcon className="w-8 h-8 text-gray-400" />
+                  )}
+                  {uploading && (
+                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                      <Loader2 className="w-5 h-5 text-white animate-spin" />
+                    </div>
+                  )}
+                </div>
+                <label className="absolute bottom-0 right-0 p-1.5 bg-[#a435f0] text-white rounded-full cursor-pointer shadow-lg hover:scale-110 transition-transform">
+                  <Camera className="w-3.5 h-3.5" />
+                  <input type="file" className="hidden" accept="image/*" onChange={handleAvatarUpload} disabled={uploading} />
+                </label>
+              </div>
+              <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mt-2">Profile Picture (Optional)</p>
+            </div>
             <div className="space-y-1">
               <label className="block text-sm font-bold text-[#2d2f31] dark:text-white">Full Name</label>
               <div className="relative">
@@ -83,21 +140,36 @@ export default function SignupPage() {
             </div>
 
             <div className="space-y-1">
-              <label className="block text-sm font-bold text-[#2d2f31] dark:text-white">Email or Phone</label>
+              <div className="flex justify-between items-center">
+                <label className="block text-sm font-bold text-[#2d2f31] dark:text-white">Email Address</label>
+                <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">At least one required</span>
+              </div>
               <div className="relative">
                 <input
-                  type="text"
-                  value={identifier}
-                  onChange={(e) => setIdentifier(e.target.value)}
-                  placeholder="Email or Phone Number"
-                  required
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="e.g. john@example.com"
                   className="w-full px-4 py-3 pl-10 rounded-md border border-[#2d2f31] dark:border-white/20 bg-transparent focus:outline-none focus:ring-1 focus:ring-[#2d2f31] dark:focus:ring-white transition text-sm font-medium dark:text-white"
                 />
-                {identifier.includes("@") ? (
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                ) : (
-                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                )}
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <div className="flex justify-between items-center">
+                <label className="block text-sm font-bold text-[#2d2f31] dark:text-white">Phone Number</label>
+                <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">At least one required</span>
+              </div>
+              <div className="relative">
+                <input
+                  type="tel"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="e.g. 7006XXXXXX"
+                  className="w-full px-4 py-3 pl-10 rounded-md border border-[#2d2f31] dark:border-white/20 bg-transparent focus:outline-none focus:ring-1 focus:ring-[#2d2f31] dark:focus:ring-white transition text-sm font-medium dark:text-white"
+                />
+                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               </div>
             </div>
 

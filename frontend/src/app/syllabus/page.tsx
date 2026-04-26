@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
-  ChevronDown, Download, BookOpen, GraduationCap, Search, Lock, Sparkles
+  ChevronDown, Download, BookOpen, GraduationCap, Search, Lock, Sparkles, X, Eye
 } from "lucide-react";
 import Image from "next/image";
 import { useAuthStore } from "@/store/authStore";
@@ -75,6 +75,12 @@ const syllabusData: Category[] = [
     name: "JKPSC KAS",
     logo: "/images/jkpsc.jpg",
     items: [{ id: "jkpsc-kas", name: "KAS Prelims & Mains", pdfUrl: "/assets/syllabus/jkpsc kas/JKPSC KAS Syllabus 2026.pdf" }]
+  },
+  {
+    id: "upsc-ias",
+    name: "UPSC IAS",
+    logo: "/images/ias.png",
+    items: [{ id: "upsc-ias-syl", name: "UPSC IAS Syllabus", pdfUrl: "/assets/syllabus/upsc ias/UPSC IAS Syllabus 2026.pdf" }]
   }
 ];
 
@@ -82,6 +88,7 @@ export default function SyllabusPage() {
   const [openId, setOpenId] = useState<string | null>(null);
   const [categories, setCategories] = useState<any[]>([]);
   const [dynamicItems, setDynamicItems] = useState<any[]>([]);
+  const [viewerPdf, setViewerPdf] = useState<{ url: string; name: string } | null>(null);
   const { user } = useAuthStore();
   const router = useRouter();
 
@@ -103,33 +110,35 @@ export default function SyllabusPage() {
   const finalData = useMemo(() => {
     let data = JSON.parse(JSON.stringify(syllabusData));
 
+    // Filter out unwanted duplicates
+    const validCats = (categories || []).filter(c => c && c.name !== "UPSC" && c.id !== "upsc");
+    const validDyn = (dynamicItems || []).filter(item => item && item.exam !== "UPSC" && item.exam !== "upsc");
+
     // 1. Merge Categories
-    if (categories && Array.isArray(categories)) {
-      categories.forEach(cat => {
-        if (!cat || cat.type === "pyq") return;
-        const catId = cat.id?.toLowerCase() || cat._id;
-        const existing = data.find((e: any) => e.id === catId);
-        if (existing) {
-          existing.name = cat.name || existing.name;
-          existing.logo = cat.logo || existing.logo;
-        } else {
-          data.push({ id: catId, name: cat.name || "Unknown", logo: cat.logo || null, items: [] });
-        }
-      });
-    }
+    validCats.forEach(cat => {
+      if (!cat || cat.type === "pyq") return;
+      const catId = cat.id?.toLowerCase() || cat._id;
+      const existing = data.find((e: any) => e.id === catId);
+      if (existing) {
+        existing.name = cat.name || existing.name;
+        existing.logo = cat.logo || existing.logo;
+      } else {
+        data.push({ id: catId, name: cat.name || "Unknown", logo: cat.logo || null, items: [] });
+      }
+    });
 
     // 2. Merge Items
-    if (dynamicItems && Array.isArray(dynamicItems)) {
-      dynamicItems.forEach(item => {
-        if (!item || !item.exam) return;
-        const exam = data.find((e: any) => e.id === item.exam.toLowerCase());
-        if (exam) {
-          if (!exam.items.find((i: any) => i.pdfUrl === item.fileUrl)) {
-            exam.items.push({ id: item._id, name: item.title, pdfUrl: item.fileUrl });
-          }
+    validDyn.forEach(item => {
+      if (!item || !item.exam) return;
+      // Normalize exam to slug: "NEET UG" → "neet-ug", "JKBOSE" → "jkbose"
+      const examSlug = item.exam.toLowerCase().replace(/\s+/g, '-');
+      const exam = data.find((e: any) => e.id === examSlug);
+      if (exam) {
+        if (!exam.items.find((i: any) => i.pdfUrl === item.fileUrl)) {
+          exam.items.push({ id: item._id, name: item.title, pdfUrl: item.fileUrl });
         }
-      });
-    }
+      }
+    });
 
     return data;
   }, [categories, dynamicItems]);
@@ -137,9 +146,9 @@ export default function SyllabusPage() {
   const mainCategory = finalData.find((c: any) => c.id === "jkbose");
   const otherCategories = finalData.filter((c: any) => c.id !== "jkbose");
 
-  const handleDownload = (e: React.MouseEvent, item: SyllabusItem) => {
-    // All Syllabus are free in Freemium model
-    return;
+  const openPdfViewer = (e: React.MouseEvent, item: SyllabusItem) => {
+    e.preventDefault();
+    setViewerPdf({ url: item.pdfUrl, name: item.name });
   };
 
   return (
@@ -208,15 +217,14 @@ export default function SyllabusPage() {
                   className="bg-slate-50 dark:bg-slate-900/50 p-8 md:p-10 flex flex-col items-center gap-4 rounded-b-[2rem]"
                 >
                   {mainCategory.items.map((item: any) => (
-                    <a
+                    <button
                       key={item.id || item.pdfUrl}
-                      href={item.pdfUrl || "#"}
-                      onClick={(e) => handleDownload(e, item)}
-                      className="w-full max-w-md py-4 px-8 rounded-2xl font-bold bg-indigo-600 text-white hover:bg-indigo-700 transition-all shadow-sm hover:shadow-md flex items-center justify-between group"
+                      onClick={(e) => openPdfViewer(e, item)}
+                      className="w-full max-w-md py-4 px-8 rounded-2xl font-bold bg-indigo-600 text-white hover:bg-indigo-700 transition-all shadow-sm hover:shadow-md flex items-center justify-between group cursor-pointer"
                     >
-                      <span className="flex-grow font-bold">{item.name}</span>
-                      <Download className="w-5 h-5 opacity-60 group-hover:opacity-100 shrink-0 transition-opacity" />
-                    </a>
+                      <span className="flex-grow font-bold text-left">{item.name}</span>
+                      <Eye className="w-5 h-5 opacity-60 group-hover:opacity-100 shrink-0 transition-opacity" />
+                    </button>
                   ))}
                 </motion.div>
               )}
@@ -268,25 +276,33 @@ export default function SyllabusPage() {
                   >
                     {cat.items.map((item: any) => {
                       const isComingSoon = !item.pdfUrl || item.pdfUrl.includes("undefined") || item.pdfUrl.endsWith("/");
-                      return (
-                        <div
-                          key={item.id}
-                          className={`flex items-center justify-between p-4 rounded-xl transition-all border border-slate-100 dark:border-white/5 group ${
-                            isComingSoon
-                            ? "bg-slate-100 dark:bg-white/5 opacity-60 cursor-not-allowed"
-                            : "bg-slate-50 dark:bg-slate-800 hover:bg-indigo-50 dark:hover:bg-indigo-500/20 hover:border-indigo-200 dark:hover:border-indigo-500/30 text-slate-900 dark:text-white"
-                          }`}
-                        >
-                          <div className="flex items-center gap-3">
-                            <div className="flex flex-col">
-                              <span className="font-bold text-[15px]">{item.name}</span>
-                              {isComingSoon && <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Available Soon</span>}
+                      
+                      if (isComingSoon) {
+                        return (
+                          <div
+                            key={item.id}
+                            className="flex items-center justify-between p-4 rounded-xl transition-all border border-slate-100 dark:border-white/5 bg-slate-100 dark:bg-white/5 opacity-60 cursor-not-allowed"
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className="flex flex-col">
+                                <span className="font-bold text-[15px]">{item.name}</span>
+                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Available Soon</span>
+                              </div>
                             </div>
+                            <Lock className="w-4 h-4 text-slate-400" />
                           </div>
-                          <div className="flex items-center gap-2">
-                            {isComingSoon ? <Lock className="w-4 h-4 text-slate-400" /> : <a href={item.pdfUrl} onClick={(e) => handleDownload(e, item)}><Download className="w-4 h-4 text-slate-400 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 shrink-0 transition-colors" /></a>}
-                          </div>
-                        </div>
+                        );
+                      }
+
+                      return (
+                        <button
+                          key={item.id}
+                          onClick={(e) => openPdfViewer(e, item)}
+                          className="flex items-center justify-between p-4 rounded-xl transition-all border border-slate-100 dark:border-white/5 bg-slate-50 dark:bg-slate-800 hover:bg-indigo-50 dark:hover:bg-indigo-500/20 hover:border-indigo-200 dark:hover:border-indigo-500/30 text-slate-900 dark:text-white cursor-pointer group w-full text-left"
+                        >
+                          <span className="font-bold text-[15px]">{item.name}</span>
+                          <Eye className="w-4 h-4 text-slate-400 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 shrink-0 transition-colors" />
+                        </button>
                       );
                     })}
                   </motion.div>
@@ -301,6 +317,59 @@ export default function SyllabusPage() {
           <p>© EduBag Academic Resources | Official Curriculum Repository</p>
         </div>
       </div>
+
+      {/* Inline PDF Viewer Overlay */}
+      <AnimatePresence>
+        {viewerPdf && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex flex-col"
+          >
+            {/* Viewer Header */}
+            <div className="flex items-center justify-between px-4 md:px-8 py-4 bg-slate-900 border-b border-white/10 shrink-0">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-9 h-9 rounded-xl bg-indigo-500/20 flex items-center justify-center shrink-0">
+                  <BookOpen className="w-4 h-4 text-indigo-400" />
+                </div>
+                <h3 className="text-white font-bold truncate text-sm md:text-base">{viewerPdf.name}</h3>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <a
+                  href={viewerPdf.url}
+                  download
+                  className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all"
+                >
+                  <Download className="w-3.5 h-3.5" /> Download
+                </a>
+                <button
+                  onClick={() => setViewerPdf(null)}
+                  className="p-2.5 hover:bg-white/10 rounded-xl text-slate-400 hover:text-white transition-all"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+            {/* PDF iframe */}
+            <div className="flex-1 min-h-0 bg-slate-950/50 flex items-center justify-center">
+              {viewerPdf.url.startsWith("http") && !viewerPdf.url.includes("localhost") && !viewerPdf.url.includes("127.0.0.1") ? (
+                <iframe
+                  src={`https://docs.google.com/gview?url=${encodeURIComponent(viewerPdf.url)}&embedded=true`}
+                  className="w-full h-full border-0 bg-white"
+                  title={viewerPdf.name}
+                />
+              ) : (
+                <iframe
+                  src={viewerPdf.url}
+                  className="w-full h-full border-0 bg-white"
+                  title={viewerPdf.name}
+                />
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

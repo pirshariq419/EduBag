@@ -19,6 +19,19 @@ exports.createResource = async (req, res, next) => {
   }
 };
 
+exports.updateResource = async (req, res, next) => {
+  try {
+    const resource = await Resource.findByIdAndUpdate(req.params.id, req.body, {
+      new: true,
+      runValidators: true
+    });
+    if (!resource) return next(new ErrorResponse('Resource not found', 404));
+    res.status(200).json({ success: true, data: resource });
+  } catch (error) {
+    next(error);
+  }
+};
+
 exports.deleteResource = async (req, res, next) => {
   try {
     const resource = await Resource.findById(req.params.id);

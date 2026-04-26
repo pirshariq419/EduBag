@@ -83,8 +83,12 @@ export default function DashboardPage() {
               className="flex items-center gap-6"
             >
               <div className="relative">
-                <div className="w-20 h-20 rounded-[2rem] bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-3xl font-black shadow-lg">
-                  {user.name.charAt(0).toUpperCase()}
+                <div className="w-20 h-20 rounded-[2rem] bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-3xl font-black shadow-lg overflow-hidden">
+                  {user.avatar ? (
+                    <img src={user.avatar} alt="Profile" className="w-full h-full object-cover" />
+                  ) : (
+                    user.name.charAt(0).toUpperCase()
+                  )}
                 </div>
               </div>
               <div>

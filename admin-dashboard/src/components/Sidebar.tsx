@@ -18,7 +18,7 @@ const nav = [
   { label: "Syllabus",  href: "/dashboard/syllabus",  icon: BookOpen },
   { label: "Colleges",  href: "/dashboard/colleges",  icon: GraduationCap },
   { label: "Users",     href: "/dashboard/users",     icon: Users },
-  { label: "Revenue",   href: "/dashboard/revenue",   icon: CreditCard },
+
   { label: "Settings",  href: "/dashboard/settings",  icon: Settings },
 ];
 

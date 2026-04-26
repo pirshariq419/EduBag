@@ -1,38 +1,28 @@
-const cloudinary = require('cloudinary').v2;
-const { CloudinaryStorage } = require('multer-storage-cloudinary-v2');
 const multer = require('multer');
+const fs = require('fs');
+const path = require('path');
 
-// Configure Cloudinary
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET
-});
+// Ensure uploads directory exists
+const uploadDir = path.join(__dirname, '..', 'uploads');
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
 
-// Setup Cloudinary Storage for Multer
-const storage = new CloudinaryStorage({
-  cloudinary: cloudinary,
-  params: async (req, file) => {
-    const type = req.body.type || 'others';
-    const folder = `edubag/${type}`;
-    
-    // Determine format based on mimetype
-    let format = 'png';
-    if (file.mimetype === 'application/pdf') format = 'pdf';
-    else if (file.mimetype === 'image/jpeg') format = 'jpg';
-    else if (file.mimetype === 'image/png') format = 'png';
-
-    return {
-      folder: folder,
-      format: format,
-      public_id: `${Date.now()}-${file.originalname.split('.')[0]}`,
-      resource_type: file.mimetype === 'application/pdf' ? 'raw' : 'image'
-    };
+// Setup Disk Storage for Multer
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, uploadDir);
   },
+  filename: function (req, file, cb) {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const cleanName = file.originalname.replace(/\s+/g, '-');
+    cb(null, uniqueSuffix + '-' + cleanName);
+  }
 });
 
 const upload = multer({ 
   storage: storage,
+  limits: { fileSize: 50 * 1024 * 1024 }, // 50MB limit
   fileFilter: function (req, file, cb) {
     const filetypes = /pdf|doc|docx|png|jpg|jpeg/;
     const extname = filetypes.test(file.originalname.toLowerCase());
@@ -48,8 +38,10 @@ exports.uploadFile = (req, res) => {
     return res.status(400).json({ success: false, error: 'Please upload a file' });
   }
 
-  // With Cloudinary, the URL is in req.file.path
-  const fileUrl = req.file.path;
+  // Construct local URL. 
+  // In development: http://localhost:5000/uploads/...
+  // In production: https://your-render-url.com/uploads/...
+  const fileUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
 
   res.status(200).json({
     success: true,

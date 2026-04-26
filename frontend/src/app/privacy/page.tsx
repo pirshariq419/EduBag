@@ -37,7 +37,7 @@ export default function PrivacyPage() {
               1. Information We Collect
             </h2>
             <p className="text-slate-600 dark:text-slate-400 leading-relaxed font-medium">
-              We collect information that you provide directly to us, such as when you create an account, subscribe to our newsletter, or make a purchase. This may include your name, email address, and exam preferences.
+              We collect information that you provide directly to us, such as when you create an account, or subscribe to our newsletter. This may include your name, email address, and exam preferences.
             </p>
           </section>
 
@@ -61,7 +61,7 @@ export default function PrivacyPage() {
               3. Data Security
             </h2>
             <p className="text-slate-600 dark:text-slate-400 leading-relaxed font-medium">
-              We implement a variety of security measures to maintain the safety of your personal information. Your sensitive data (like payment info) is handled by professional third-party services like Razorpay and is never stored on our servers.
+              We implement a variety of security measures to maintain the safety of your personal information. Your data is handled securely and is protected against unauthorized access, alteration, disclosure, or destruction.
             </p>
           </section>
 

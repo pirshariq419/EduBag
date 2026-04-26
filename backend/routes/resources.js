@@ -1,5 +1,5 @@
 const express = require('express');
-const { getResources, createResource, deleteResource } = require('../controllers/resources');
+const { getResources, createResource, updateResource, deleteResource } = require('../controllers/resources');
 const { protect, authorize } = require('../middlewares/authMiddleware');
 
 const router = express.Router();
@@ -9,6 +9,7 @@ router.route('/')
   .post(protect, authorize('admin'), createResource);
 
 router.route('/:id')
+  .put(protect, authorize('admin'), updateResource)
   .delete(protect, authorize('admin'), deleteResource);
 
 module.exports = router;

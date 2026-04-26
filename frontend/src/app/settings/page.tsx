@@ -9,7 +9,7 @@ import {
   User, Settings as SettingsIcon, Save, Loader2, 
   Shield, CreditCard, ChevronLeft, Crown, Target,
   Bell, Key, LogOut, CheckCircle2, AlertCircle,
-  Mail, Phone
+  Mail, Phone, Camera, Trash2
 } from "lucide-react";
 import Link from "next/link";
 
@@ -25,8 +25,10 @@ export default function SettingsPage() {
     name: "",
     email: "",
     phone: "",
-    examTarget: "General"
+    examTarget: "General",
+    avatar: ""
   });
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -34,10 +36,48 @@ export default function SettingsPage() {
         name: user.name,
         email: user.email || "",
         phone: user.phone || "",
-        examTarget: user.examTarget || "General"
+        examTarget: user.examTarget || "General",
+        avatar: user.avatar || ""
       });
     }
   }, [user]);
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("type", "avatar");
+
+    try {
+      const res = await api.post("/uploads", formData, {
+        headers: { "Content-Type": "multipart/form-data" }
+      });
+      const imageUrl = res.data.data;
+      
+      // Update local form state
+      setForm(prev => ({ ...prev, avatar: imageUrl }));
+      
+      // Auto-save to database immediately
+      await api.put("/auth/updatedetails", { 
+        ...form, // Use current form state
+        avatar: imageUrl 
+      });
+      
+      // Reload user in auth store
+      await loadUser();
+      
+      setSuccess(true);
+      setTimeout(() => setSuccess(false), 3000);
+    } catch (err: any) {
+      console.error("Upload error:", err);
+      alert(err?.response?.data?.error || "Failed to upload image. Please try a smaller file.");
+    } finally {
+      setUploading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -145,12 +185,36 @@ export default function SettingsPage() {
                   <div className="relative z-10">
                     <div className="flex items-center gap-8 mb-12">
                       <div className="relative group">
-                        <div className="w-24 h-24 rounded-[2.25rem] bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-4xl font-black shadow-2xl group-hover:rotate-6 transition-transform">
-                          {user.name.charAt(0).toUpperCase()}
+                        <div className="w-24 h-24 rounded-[2.25rem] bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-4xl font-black shadow-2xl group-hover:rotate-6 transition-transform overflow-hidden">
+                          {form.avatar ? (
+                            <img src={form.avatar} alt="Avatar" className="w-full h-full object-cover" />
+                          ) : (
+                            user.name.charAt(0).toUpperCase()
+                          )}
+                          
+                          {uploading && (
+                            <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                              <Loader2 className="w-6 h-6 animate-spin text-white" />
+                            </div>
+                          )}
                         </div>
-                        <div className="absolute -bottom-2 -right-2 p-2 rounded-xl bg-indigo-500 text-white shadow-lg">
-                          <SettingsIcon className="w-4 h-4" />
-                        </div>
+                        
+                        <label className="absolute -bottom-2 -right-2 p-2 rounded-xl bg-indigo-500 text-white shadow-lg cursor-pointer hover:bg-indigo-600 hover:scale-110 transition-all">
+                          <Camera className="w-4 h-4" />
+                          <input type="file" className="hidden" accept="image/*" onChange={handleAvatarUpload} disabled={uploading} />
+                        </label>
+
+                        {form.avatar && (
+                          <button 
+                            onClick={() => {
+                              setForm({...form, avatar: ""});
+                              api.put("/auth/updatedetails", { ...form, avatar: null });
+                            }}
+                            className="absolute -top-2 -right-2 p-1.5 rounded-lg bg-red-500 text-white shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </button>
+                        )}
                       </div>
                       <div>
                         <h2 className="text-2xl font-black tracking-tight mb-1">{user.name}</h2>

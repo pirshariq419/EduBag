@@ -65,17 +65,6 @@ export default function TermsPage() {
             </p>
           </section>
 
-          <section className="space-y-4">
-            <h2 className="text-2xl font-black text-slate-900 dark:text-white flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-500/10 flex items-center justify-center text-amber-600 dark:text-amber-400">
-                <ShieldCheck className="w-5 h-5" />
-              </div>
-              4. Pro Membership & Payments
-            </h2>
-            <p className="text-slate-600 dark:text-slate-400 leading-relaxed font-medium">
-              Pro Membership provides access to premium resources. All payments are processed through Razorpay. Subscriptions are billed in advance and are non-refundable except as expressly set forth in our Refund Policy.
-            </p>
-          </section>
 
           <div className="pt-8 border-t border-slate-100 dark:border-white/5 text-center">
             <p className="text-sm text-slate-500 font-medium">

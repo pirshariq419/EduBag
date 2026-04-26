@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import api from "@/lib/api";
 import Topbar from "@/components/Topbar";
-import { Plus, Trash2, Search, Crown, BookOpen, X, Save, Loader2, FileText, Pencil } from "lucide-react";
+import { Plus, Trash2, Search, BookOpen, X, Save, Loader2, FileText, Pencil } from "lucide-react";
 
 interface Resource {
   _id: string;
@@ -13,32 +13,51 @@ interface Resource {
   createdAt: string;
 }
 
-const EXAMS = ["JKBOSE", "NEET UG", "NEET PG", "JEE Mains", "JEE Advanced", "SKAUST", "JKBOPEE", "JKPSC KAS", "CBSE"];
+interface CategoryItem {
+  _id: string;
+  id: string;
+  name: string;
+}
+
 const CLASSES = ["Class 10th", "Class 11th", "Class 12th", "Undergraduate", "Postgraduate", "General"];
+
+const defaultForm = { title: "", exam: "", class: "Class 10th", fileUrl: "" };
 
 export default function SyllabusPage() {
   const [items, setItems] = useState<Resource[]>([]);
+  const [categories, setCategories] = useState<CategoryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [saving, setSaving] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
-  const [form, setForm] = useState({
-    title: "", exam: "JKBOSE", class: "Class 10th",
-    fileUrl: "",
-  });
+  const [form, setForm] = useState({ ...defaultForm });
+
+  const fetchCategories = async () => {
+    try {
+      const res = await api.get("/categories");
+      const cats = (res.data.data || []).filter((c: any) => c.type !== "pyq");
+      setCategories(cats);
+      if (cats.length > 0 && !form.exam) {
+        setForm(p => ({ ...p, exam: cats[0].id }));
+      }
+    } catch { }
+  };
 
   const fetchItems = async () => {
     setLoading(true);
     try {
       const res = await api.get("/resources?type=syllabus");
       setItems(res.data.data || []);
-    } catch { /* ignore */ }
+    } catch { }
     finally { setLoading(false); }
   };
 
-  useEffect(() => { fetchItems(); }, []);
+  useEffect(() => {
+    fetchCategories();
+    fetchItems();
+  }, []);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -70,16 +89,23 @@ export default function SyllabusPage() {
       } else {
         await api.post("/resources", { ...form, type: "syllabus" });
       }
-      setShowModal(false);
-      setEditingId(null);
-      setForm({ title: "", exam: "JKBOSE", class: "Class 10th", fileUrl: "" });
+      closeModal();
       fetchItems();
     } catch (err: any) {
       alert(err?.response?.data?.error || "Failed to save");
     } finally { setSaving(false); }
   };
 
-  const handleEdit = (item: Resource) => {
+  const openAddModal = () => {
+    setEditingId(null);
+    setForm({
+      ...defaultForm,
+      exam: categories.length > 0 ? categories[0].id : "",
+    });
+    setShowModal(true);
+  };
+
+  const openEditModal = (item: Resource) => {
     setEditingId(item._id);
     setForm({
       title: item.title,
@@ -90,6 +116,11 @@ export default function SyllabusPage() {
     setShowModal(true);
   };
 
+  const closeModal = () => {
+    setShowModal(false);
+    setEditingId(null);
+  };
+
   const handleDelete = async (id: string) => {
     if (!confirm("Delete this syllabus entry?")) return;
     try {
@@ -98,12 +129,15 @@ export default function SyllabusPage() {
     } catch { alert("Failed to delete"); }
   };
 
+  const getCatName = (slug: string) => {
+    const cat = categories.find(c => c.id === slug);
+    return cat ? cat.name : slug;
+  };
+
   const filtered = items.filter((i) =>
     i.title.toLowerCase().includes(search.toLowerCase()) ||
     i.exam.toLowerCase().includes(search.toLowerCase())
   );
-
-  const f = (k: string, v: any) => setForm((p) => ({ ...p, [k]: v }));
 
   return (
     <div>
@@ -114,9 +148,9 @@ export default function SyllabusPage() {
           <div className="relative">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: "#475569" }} />
             <input value={search} onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search syllabi..." className="input pl-11 w-72" />
+              placeholder="Search syllabi..." className="input pl-11 w-full md:w-72" />
           </div>
-          <button onClick={() => { setEditingId(null); setShowModal(true); }} className="btn-primary flex items-center gap-2">
+          <button onClick={openAddModal} className="btn-primary flex items-center gap-2">
             <Plus className="w-4 h-4" /> Add Syllabus
           </button>
         </div>
@@ -144,7 +178,7 @@ export default function SyllabusPage() {
                 <div>
                   <h3 className="font-black text-white text-sm leading-tight">{item.title}</h3>
                   <div className="flex items-center gap-2 mt-2 flex-wrap">
-                    <span className="badge badge-indigo">{item.exam}</span>
+                    <span className="badge badge-indigo">{getCatName(item.exam)}</span>
                     {item.class && <span className="badge badge-gray">{item.class}</span>}
                   </div>
                 </div>
@@ -155,7 +189,7 @@ export default function SyllabusPage() {
                     style={{ background: "rgba(6,182,212,0.1)", color: "#06b6d4", border: "1px solid rgba(6,182,212,0.2)" }}>
                     <FileText className="w-3.5 h-3.5" /> Preview
                   </a>
-                  <button onClick={() => handleEdit(item)}
+                  <button onClick={() => openEditModal(item)}
                     className="flex items-center gap-1.5 text-xs font-bold py-2.5 px-4 rounded-xl transition-all"
                     style={{ background: "rgba(99,102,241,0.1)", color: "#6366f1", border: "1px solid rgba(99,102,241,0.2)" }}>
                     <Pencil className="w-3.5 h-3.5" />
@@ -174,35 +208,39 @@ export default function SyllabusPage() {
 
       {/* Modal */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(8px)" }}>
-          <div className="w-full max-w-md animate-fadeUp" style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "1.75rem" }}>
-            <div className="flex items-center justify-between px-7 py-5" style={{ borderBottom: "1px solid var(--border)" }}>
+        <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center p-4 pt-10 sm:p-4" style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(8px)" }}>
+          <div className="w-full max-w-md animate-fadeUp flex flex-col max-h-[85vh]" style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "1.75rem" }}>
+            <div className="flex items-center justify-between px-4 md:px-7 py-5 shrink-0" style={{ borderBottom: "1px solid var(--border)" }}>
               <div>
                 <h2 className="text-lg font-black text-white">{editingId ? "Edit Syllabus" : "Add Syllabus"}</h2>
                 <p className="text-xs mt-0.5" style={{ color: "#475569" }}>{editingId ? "Update official syllabus PDF link" : "Link an official syllabus PDF"}</p>
               </div>
-              <button onClick={() => setShowModal(false)} className="p-2 rounded-xl hover:bg-white/5" style={{ color: "#475569" }}>
+              <button onClick={closeModal} className="p-2 rounded-xl hover:bg-white/5" style={{ color: "#475569" }}>
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="px-7 py-6 space-y-5">
+            <form onSubmit={handleSubmit} className="px-4 md:px-7 py-6 space-y-5 overflow-y-auto">
               <div className="space-y-1.5">
                 <label className="text-xs font-black uppercase tracking-widest" style={{ color: "#475569" }}>Syllabus Title</label>
-                <input required value={form.title} onChange={(e) => f("title", e.target.value)}
+                <input required value={form.title} onChange={(e) => setForm(p => ({ ...p, title: e.target.value }))}
                   placeholder="e.g. JKBOSE Class 12 Official Syllabus 2026" className="input" />
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                   <label className="text-xs font-black uppercase tracking-widest" style={{ color: "#475569" }}>Exam / Board</label>
-                  <select value={form.exam} onChange={(e) => f("exam", e.target.value)} className="input">
-                    {EXAMS.map((ex) => <option key={ex}>{ex}</option>)}
+                  <select required value={form.exam} onChange={(e) => setForm(p => ({ ...p, exam: e.target.value }))} className="input">
+                    <option value="">Select Exam...</option>
+                    {categories.map((cat) => (
+                      <option key={cat._id} value={cat.id}>{cat.name}</option>
+                    ))}
                   </select>
+                  <p className="text-[10px] text-slate-500">Linked to your Categories/Exams</p>
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-xs font-black uppercase tracking-widest" style={{ color: "#475569" }}>Class / Level</label>
-                  <select value={form.class} onChange={(e) => f("class", e.target.value)} className="input">
+                  <select value={form.class} onChange={(e) => setForm(p => ({ ...p, class: e.target.value }))} className="input">
                     {CLASSES.map((c) => <option key={c}>{c}</option>)}
                   </select>
                 </div>
@@ -210,7 +248,7 @@ export default function SyllabusPage() {
 
               <div className="space-y-1.5">
                 <label className="text-xs font-black uppercase tracking-widest" style={{ color: "#475569" }}>Upload Syllabus PDF</label>
-                <label className="flex flex-col items-center justify-center gap-3 p-6 rounded-2xl border-2 border-dashed cursor-pointer transition-all hover:bg-white/5" 
+                <label className="flex flex-col items-center justify-center gap-3 p-6 rounded-2xl border-2 border-dashed cursor-pointer transition-all hover:bg-white/5"
                   style={{ borderColor: form.fileUrl ? "rgba(16,185,129,0.4)" : "var(--border)", background: form.fileUrl ? "rgba(16,185,129,0.05)" : "transparent" }}>
                   <input type="file" accept=".pdf" className="hidden" onChange={handleFileUpload} disabled={uploading} />
                   {uploading ? (
@@ -229,9 +267,7 @@ export default function SyllabusPage() {
                 )}
               </div>
 
-
-
-              <button type="submit" disabled={saving} className="btn-primary w-full py-4 flex items-center justify-center gap-2">
+              <button type="submit" disabled={saving || uploading} className="btn-primary w-full py-4 flex items-center justify-center gap-2">
                 {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                 {saving ? "Saving..." : (editingId ? "Save Changes" : "Publish Syllabus")}
               </button>

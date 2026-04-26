@@ -26,7 +26,9 @@ export default function UsersPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  const students = users.filter(u => u.role !== "admin");
+  const students = users
+    .filter(u => u.role !== "admin")
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
   const filtered = students.filter((u) =>
     u.name.toLowerCase().includes(search.toLowerCase()) ||

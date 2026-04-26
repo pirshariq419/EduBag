@@ -4,6 +4,6 @@ const { protect, authorize } = require('../middlewares/authMiddleware');
 
 const router = express.Router();
 
-router.post('/', protect, authorize('admin'), uploadMiddleware, uploadFile);
+router.post('/', protect, uploadMiddleware, uploadFile);
 
 module.exports = router;

@@ -13,10 +13,12 @@ interface CollegeCardProps {
 
 export default function CollegeCard({ name, image, location, description, link, isLocked, onLockedClick }: CollegeCardProps) {
   const handleClick = (e: React.MouseEvent) => {
-    if (isLocked) {
+    if (onLockedClick) {
       e.preventDefault();
-      onLockedClick?.();
-    } else if (!link) {
+      onLockedClick();
+    } else if (link) {
+      window.open(link, "_blank", "noopener,noreferrer");
+    } else {
       alert("Official link not available yet.");
     }
   };

@@ -4,11 +4,18 @@ import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   ChevronDown, ChevronUp, FileText, Download,
-  BookOpen, GraduationCap, Calendar, Search, Sparkles, Zap
+  BookOpen, GraduationCap, Calendar, Search, Sparkles, Zap, X, Eye
 } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import Image from "next/image";
 import api from "@/lib/api";
+import availablePyqsRaw from "@/data/availablePyqs.json";
+
+const availablePyqs = (availablePyqsRaw as string[]).map(p => {
+  const normalized = p.replace(/\\/g, "/");
+  const split = normalized.split("/public/");
+  return split.length > 1 ? "/" + split[1] : normalized;
+});
 
 interface Subject {
   name: string;
@@ -37,9 +44,15 @@ interface ExamCategory {
 const generateYears = (examId: string, className: string, start: number, end: number, subjects: string[]): YearData[] => {
   const years: YearData[] = [];
   for (let y = start; y >= end; y--) {
+    let currentSubjects = subjects;
+    
+    if (examId === "jkbose" && className === "class-10th" && y >= 2020 && y <= 2025) {
+      currentSubjects = currentSubjects.filter(s => s !== "Hindi");
+    }
+
     years.push({
       year: y,
-      subjects: subjects.map(s => {
+      subjects: currentSubjects.map(s => {
         let fileName = "";
         let folderPath = `/assets/pyq/${examId}`;
         
@@ -62,6 +75,9 @@ const generateYears = (examId: string, className: string, start: number, end: nu
         } else if (examId === "jkbopee") {
           folderPath = `/assets/pyq/jkbopee bsc nursing`;
           fileName = `JKBOPEE B.Sc Nursing ${y}.pdf`;
+        } else if (examId === "upsc-ias") {
+          folderPath = `/assets/pyq/upsc ias`;
+          fileName = `UPSC IAS Paper ${y}.pdf`;
         }
 
         return {
@@ -98,15 +114,15 @@ const pyqData: ExamCategory[] = [
     classes: [
       { 
         name: "Class 10th", 
-        years: generateYears("jkbose", "class-10th", 2026, 2013, ["English", "Mathematics", "Science", "Social Science", "Urdu"]) 
+        years: generateYears("jkbose", "class-10th", 2026, 2020, ["English", "Maths", "Science", "Social Science", "Urdu", "Hindi"]) 
       },
       { 
         name: "Class 11th", 
-        years: generateYears("jkbose", "class-11th", 2026, 2013, ["English", "Physics", "Chemistry", "Zoology", "Botany", "Mathematics", "Phy. Edu.", "Political Science"]) 
+        years: generateYears("jkbose", "class-11th", 2026, 2020, ["English", "Physics", "Chemistry", "Zoology", "Botany", "Maths", "Phy. Edu.", "Political Science", "Geography", "History"]) 
       },
       { 
         name: "Class 12th", 
-        years: generateYears("jkbose", "class-12th", 2026, 2013, ["English", "Physics", "Chemistry", "Zoology", "Botany", "Mathematics", "Phy. Edu.", "History"]) 
+        years: generateYears("jkbose", "class-12th", 2026, 2020, ["English", "Physics", "Chemistry", "Zoology", "Botany", "Maths", "Phy. Edu.", "History"]) 
       }
     ]
   },
@@ -144,7 +160,13 @@ const pyqData: ExamCategory[] = [
     id: "skaust",
     name: "SKAUST-K UET",
     logo: "/images/skaustsyl.jpg",
-    years: generateYears("skaust", "", 2026, 2013, ["Question Paper"])
+    years: generateYears("skaust", "", 2026, 2018, ["Question Paper"])
+  },
+  {
+    id: "upsc-ias",
+    name: "UPSC IAS",
+    logo: "/images/ias.png",
+    years: generateYears("upsc-ias", "", 2026, 2025, ["UPSC IAS Paper"])
   }
 ];
 
@@ -154,6 +176,7 @@ export default function PYQPage() {
   const [openYear, setOpenYear] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [dynamicData, setDynamicData] = useState<ExamCategory[]>([]);
+  const [viewerPdf, setViewerPdf] = useState<{ url: string; name: string } | null>(null);
   const { user } = useAuthStore();
   const [categories, setCategories] = useState<any[]>([]);
 
@@ -170,9 +193,11 @@ export default function PYQPage() {
         
         const grouped: ExamCategory[] = [];
         resources.forEach((r: any) => {
-           let exam = grouped.find(e => e.id === r.exam.toLowerCase());
+           // Normalize exam to slug: "NEET UG" → "neet-ug", "JKBOSE" → "jkbose"
+           const examSlug = r.exam.toLowerCase().replace(/\s+/g, '-');
+           let exam = grouped.find(e => e.id === examSlug);
            if (!exam) {
-             exam = { id: r.exam.toLowerCase(), name: r.exam, classes: [] };
+             exam = { id: examSlug, name: r.exam, classes: [] };
              grouped.push(exam);
            }
            
@@ -212,72 +237,68 @@ export default function PYQPage() {
     // Start with a clone of hardcoded data
     let data = JSON.parse(JSON.stringify(pyqData));
 
+    // Filter out unwanted duplicates (like dynamic categories that match hardcoded ones)
+    const validCats = (categories || []).filter(c => c && c.name !== "UPSC" && c.id !== "upsc");
+    const validDyn = (dynamicData || []).filter(d => d && d.name !== "UPSC" && d.id !== "upsc");
+
     // 1. Merge Dynamic Categories (Exams) from DB
-    if (categories && Array.isArray(categories)) {
-      categories.forEach(cat => {
-        if (!cat || cat.type === "syllabus") return;
-        const existing = data.find((e: any) => e.id === cat.id);
-        if (existing) {
-          existing.name = cat.name || existing.name;
-          existing.logo = cat.logo || existing.logo;
-        } else {
-          data.push({ id: cat.id, name: cat.name || "Unknown", logo: cat.logo || null, classes: [], years: [] });
-        }
-      });
-    }
+    validCats.forEach(cat => {
+      if (!cat || cat.type === "syllabus") return;
+      const existing = data.find((e: any) => e.id === cat.id);
+      if (existing) {
+        existing.name = cat.name || existing.name;
+        existing.logo = cat.logo || existing.logo;
+      } else {
+        data.push({ id: cat.id, name: cat.name || "Unknown", logo: cat.logo || null, classes: [], years: [] });
+      }
+    });
 
     // 2. Merge Dynamic Resources
-    if (dynamicData && Array.isArray(dynamicData)) {
-      dynamicData.forEach(dynExam => {
-        const exam = data.find((e: any) => e.id === dynExam.id);
-        if (exam) {
-          if (dynExam.classes) {
-            dynExam.classes.forEach((dynCls: any) => {
-              let cls = exam.classes?.find((c: any) => c.name === dynCls.name);
-              if (!cls) {
-                cls = { name: dynCls.name, years: [] };
-                exam.classes?.push(cls);
-              }
-              dynCls.years.forEach((dynYr: any) => {
-                let yr = cls.years.find((y: any) => y.year === dynYr.year);
-                if (yr) {
-                  dynYr.subjects.forEach((s: any) => {
-                    if (!yr.subjects.find((es: any) => es.url === s.url)) yr.subjects.push(s);
-                  });
-                } else {
-                  cls.years.push(dynYr);
-                }
-              });
-            });
-          }
-          if (dynExam.years) {
-            if (!exam.years) exam.years = [];
-            dynExam.years.forEach((dynYr: any) => {
-              let yr = exam.years.find((y: any) => y.year === dynYr.year);
+    validDyn.forEach(dynExam => {
+      const exam = data.find((e: any) => e.id === dynExam.id);
+      if (exam) {
+        if (dynExam.classes) {
+          dynExam.classes.forEach((dynCls: any) => {
+            let cls = exam.classes?.find((c: any) => c.name === dynCls.name);
+            if (!cls) {
+              cls = { name: dynCls.name, years: [] };
+              exam.classes?.push(cls);
+            }
+            dynCls.years.forEach((dynYr: any) => {
+              let yr = cls.years.find((y: any) => y.year === dynYr.year);
               if (yr) {
                 dynYr.subjects.forEach((s: any) => {
                   if (!yr.subjects.find((es: any) => es.url === s.url)) yr.subjects.push(s);
                 });
               } else {
-                exam.years.push(dynYr);
+                cls.years.push(dynYr);
               }
             });
-          }
+          });
         }
-      });
-    }
+        if (dynExam.years) {
+          if (!exam.years) exam.years = [];
+          dynExam.years.forEach((dynYr: any) => {
+            let yr = exam.years.find((y: any) => y.year === dynYr.year);
+            if (yr) {
+              dynYr.subjects.forEach((s: any) => {
+                if (!yr.subjects.find((es: any) => es.url === s.url)) yr.subjects.push(s);
+              });
+            } else {
+              exam.years.push(dynYr);
+            }
+          });
+        }
+      }
+    });
     return data;
   }, [categories, dynamicData]);
 
   const mainCategory = finalData.find((c: any) => c.id === "jkbose");
   const otherCategories = finalData.filter((c: any) => c.id !== "jkbose");
 
-  const handleDownload = (e: React.MouseEvent, url: string) => {
-    if (url.includes("undefined") || url.endsWith("/")) {
-      e.preventDefault();
-      alert("This resource is coming soon!");
-      return;
-    }
+  const openPdfViewer = (url: string, name: string) => {
+    setViewerPdf({ url, name });
   };
 
   return (
@@ -373,7 +394,7 @@ export default function PYQPage() {
                                   yearData={y} 
                                   isOpen={openYear === `jkbose-${cls.name}-${y.year}`}
                                   onToggle={() => setOpenYear(openYear === `jkbose-${cls.name}-${y.year}` ? null : `jkbose-${cls.name}-${y.year}`)}
-                                  handleDownload={handleDownload}
+                                  onViewPdf={openPdfViewer}
                                 />
                               ))}
                             </motion.div>
@@ -437,7 +458,7 @@ export default function PYQPage() {
                         yearData={y} 
                         isOpen={openYear === `${cat.id}-${y.year}`}
                         onToggle={() => setOpenYear(openYear === `${cat.id}-${y.year}` ? null : `${cat.id}-${y.year}`)}
-                        handleDownload={handleDownload}
+                        onViewPdf={openPdfViewer}
                       />
                     ))}
                   </motion.div>
@@ -454,11 +475,62 @@ export default function PYQPage() {
           <p>© EduBag Archive | Official Previous Year Papers Repository</p>
         </div>
       </div>
+
+      {/* Inline PDF Viewer Overlay */}
+      <AnimatePresence>
+        {viewerPdf && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex flex-col"
+          >
+            <div className="flex items-center justify-between px-4 md:px-8 py-4 bg-slate-900 border-b border-white/10 shrink-0">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-9 h-9 rounded-xl bg-indigo-500/20 flex items-center justify-center shrink-0">
+                  <FileText className="w-4 h-4 text-indigo-400" />
+                </div>
+                <h3 className="text-white font-bold truncate text-sm md:text-base">{viewerPdf.name}</h3>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <a
+                  href={viewerPdf.url}
+                  download
+                  className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all"
+                >
+                  <Download className="w-3.5 h-3.5" /> Download
+                </a>
+                <button
+                  onClick={() => setViewerPdf(null)}
+                  className="p-2.5 hover:bg-white/10 rounded-xl text-slate-400 hover:text-white transition-all"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+            <div className="flex-1 min-h-0 bg-slate-950/50 flex items-center justify-center">
+              {viewerPdf.url.startsWith("http") && !viewerPdf.url.includes("localhost") && !viewerPdf.url.includes("127.0.0.1") ? (
+                <iframe
+                  src={`https://docs.google.com/gview?url=${encodeURIComponent(viewerPdf.url)}&embedded=true`}
+                  className="w-full h-full border-0 bg-white"
+                  title={viewerPdf.name}
+                />
+              ) : (
+                <iframe
+                  src={viewerPdf.url}
+                  className="w-full h-full border-0 bg-white"
+                  title={viewerPdf.name}
+                />
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
 
-function YearSection({ yearData, isOpen, onToggle, handleDownload }: any) {
+function YearSection({ yearData, isOpen, onToggle, onViewPdf }: any) {
   const isLatest = yearData.year === 2026;
   
   return (
@@ -507,20 +579,26 @@ function YearSection({ yearData, isOpen, onToggle, handleDownload }: any) {
             className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1 pb-4"
           >
             {yearData.subjects.map((sub: any, idx: number) => {
-              const isComingSoon = sub.url.includes("undefined") || sub.url.endsWith("/");
+              const isLocal = sub.url && sub.url.startsWith('/');
+              const isComingSoon = !sub.url || sub.url.includes("undefined") || sub.url.endsWith("/") || (isLocal && !availablePyqs.includes(sub.url));
               
               return (
-                <motion.a
+                <motion.button
                   key={idx}
-                  href={isComingSoon ? "#" : sub.url}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: idx * 0.05 }}
-                  onClick={(e) => handleDownload(e, sub.url)}
-                  className={`flex items-center justify-between p-4 rounded-2xl transition-all border group relative overflow-hidden ${
+                  onClick={() => {
+                    if (isComingSoon) {
+                      alert(yearData.year === 2026 ? "This resource is coming soon!" : "This resource is not available currently.");
+                      return;
+                    }
+                    onViewPdf(sub.url, sub.name);
+                  }}
+                  className={`flex items-center justify-between p-4 rounded-2xl transition-all border group relative overflow-hidden text-left ${
                     isComingSoon
                     ? "bg-slate-100 dark:bg-white/5 border-slate-200 dark:border-white/5 opacity-60 cursor-not-allowed"
-                    : "bg-white dark:bg-slate-900 border-slate-200 dark:border-white/10 hover:border-indigo-400 dark:hover:border-indigo-500/50 hover:shadow-lg hover:-translate-y-0.5 text-slate-900 dark:text-white"
+                    : "bg-white dark:bg-slate-900 border-slate-200 dark:border-white/10 hover:border-indigo-400 dark:hover:border-indigo-500/50 hover:shadow-lg hover:-translate-y-0.5 text-slate-900 dark:text-white cursor-pointer"
                   }`}
                 >
                   <div className="flex items-center gap-4">
@@ -534,7 +612,7 @@ function YearSection({ yearData, isOpen, onToggle, handleDownload }: any) {
                     <div>
                       <p className="font-black text-sm">{sub.name}</p>
                       <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                        {isComingSoon ? "Available Soon" : "Free Download"}
+                        {isComingSoon ? (yearData.year === 2026 ? "Coming Soon" : "Not Available Currently") : "View Paper"}
                       </p>
                     </div>
                   </div>
@@ -544,9 +622,9 @@ function YearSection({ yearData, isOpen, onToggle, handleDownload }: any) {
                     ? "text-slate-300"
                     : "text-slate-300 group-hover:text-indigo-600 dark:group-hover:text-indigo-400"
                   }`}>
-                    <Download className="w-5 h-5" />
+                    <Eye className="w-5 h-5" />
                   </div>
-                </motion.a>
+                </motion.button>
               );
             })}
           </motion.div>

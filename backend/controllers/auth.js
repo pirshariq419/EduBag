@@ -18,6 +18,7 @@ exports.register = async (req, res, next) => {
       name,
       password,
       examTarget,
+      avatar: req.body.avatar,
       email: email && email.trim() !== "" ? email : undefined,
       phone: phone && phone.trim() !== "" ? phone : undefined
     };
@@ -93,7 +94,8 @@ exports.updateDetails = async (req, res, next) => {
       name: req.body.name,
       email: req.body.email && req.body.email.trim() !== "" ? req.body.email : undefined,
       phone: req.body.phone && req.body.phone.trim() !== "" ? req.body.phone : undefined,
-      examTarget: req.body.examTarget
+      examTarget: req.body.examTarget,
+      avatar: req.body.avatar
     };
 
     const user = await User.findByIdAndUpdate(req.user.id, fieldsToUpdate, {

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useAuthStore } from "@/store/authStore";
 import { 
   Home, BookOpen, FileText, 
   LayoutDashboard, ClipboardList
@@ -18,12 +19,15 @@ const navItems = [
 
 export default function BottomNav() {
   const pathname = usePathname();
+  const { user } = useAuthStore();
 
   return (
     <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-t border-slate-200 dark:border-white/10 safe-area-pb">
       <div className="flex items-center justify-around h-16 px-2">
         {navItems.map((item) => {
           const isActive = pathname === item.href;
+          const isProfile = item.name === "Me";
+
           return (
             <Link 
               key={item.name} 
@@ -33,11 +37,25 @@ export default function BottomNav() {
               <div className={`flex flex-col items-center justify-center transition-all duration-300 ${
                 isActive ? "scale-110" : "scale-100"
               }`}>
-                <item.icon 
-                  className={`w-6 h-6 transition-colors ${
-                    isActive ? "text-indigo-600 dark:text-indigo-400" : "text-slate-500 group-hover:text-slate-900 dark:group-hover:text-white"
-                  }`} 
-                />
+                {isProfile && user ? (
+                  <div className={`w-6 h-6 rounded-full overflow-hidden border-2 transition-all ${
+                    isActive ? "border-indigo-600 dark:border-indigo-400 shadow-md" : "border-transparent"
+                  }`}>
+                    {user.avatar ? (
+                      <img src={user.avatar} alt="Profile" className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-[10px] font-black text-white">
+                        {user.name.charAt(0).toUpperCase()}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <item.icon 
+                    className={`w-6 h-6 transition-colors ${
+                      isActive ? "text-indigo-600 dark:text-indigo-400" : "text-slate-500 group-hover:text-slate-900 dark:group-hover:text-white"
+                    }`} 
+                  />
+                )}
                 <span className={`text-[10px] font-bold mt-1 transition-colors ${
                   isActive ? "text-indigo-600 dark:text-indigo-400" : "text-slate-500 group-hover:text-slate-900 dark:group-hover:text-white"
                 }`}>
