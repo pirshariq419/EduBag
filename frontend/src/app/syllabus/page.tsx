@@ -353,19 +353,35 @@ export default function SyllabusPage() {
             </div>
             {/* PDF iframe */}
             <div className="flex-1 min-h-0 bg-slate-950/50 flex items-center justify-center">
-              {viewerPdf.url.startsWith("http") && !viewerPdf.url.includes("localhost") && !viewerPdf.url.includes("127.0.0.1") ? (
-                <iframe
-                  src={`https://docs.google.com/gview?url=${encodeURIComponent(viewerPdf.url)}&embedded=true`}
-                  className="w-full h-full border-0 bg-white"
-                  title={viewerPdf.name}
-                />
-              ) : (
-                <iframe
-                  src={viewerPdf.url}
-                  className="w-full h-full border-0 bg-white"
-                  title={viewerPdf.name}
-                />
-              )}
+              {(() => {
+                const isLocalhost = typeof window !== "undefined" && (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1");
+                const isAsset = viewerPdf.url.startsWith("/");
+                
+                if (!isLocalhost || (viewerPdf.url.startsWith("http") && !viewerPdf.url.includes("localhost"))) {
+                  const absoluteUrl = isAsset ? `${window.location.origin}${viewerPdf.url}` : viewerPdf.url;
+                  return (
+                    <iframe
+                      src={`https://docs.google.com/gview?url=${encodeURIComponent(absoluteUrl)}&embedded=true`}
+                      className="w-full h-full border-0 bg-white"
+                      title={viewerPdf.name}
+                    />
+                  );
+                }
+                
+                return (
+                  <object
+                    data={viewerPdf.url}
+                    type="application/pdf"
+                    className="w-full h-full border-0 bg-white"
+                  >
+                    <iframe
+                      src={viewerPdf.url}
+                      className="w-full h-full border-0 bg-white"
+                      title={viewerPdf.name}
+                    />
+                  </object>
+                );
+              })()}
             </div>
           </motion.div>
         )}
