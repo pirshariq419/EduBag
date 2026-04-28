@@ -1,5 +1,6 @@
 import Image from 'next/image';
 import { ExternalLink, MapPin, Lock } from 'lucide-react';
+import { toast } from '@/store/toastStore';
 
 interface CollegeCardProps {
   name: string;
@@ -19,7 +20,7 @@ export default function CollegeCard({ name, image, location, description, link, 
     } else if (link) {
       window.open(link, "_blank", "noopener,noreferrer");
     } else {
-      alert("Official link not available yet.");
+      toast.info("Official link not available yet.");
     }
   };
 

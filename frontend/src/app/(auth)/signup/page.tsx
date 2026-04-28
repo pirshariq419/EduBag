@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
+import { toast } from "@/store/toastStore";
 import api from "@/lib/api";
 import { Eye, EyeOff, Target, ArrowRight, User as UserIcon, Phone, Mail, Camera, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -65,7 +66,7 @@ export default function SignupPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email && !phone) {
-      alert("Please provide either an email or phone number.");
+      toast.warning("Please provide either an email or phone number.");
       return;
     }
 

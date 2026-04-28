@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
+import { toast } from "@/store/toastStore";
 import api from "@/lib/api";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
@@ -88,7 +89,7 @@ export default function SettingsPage() {
       setTimeout(() => setSuccess(false), 3000);
     } catch (err: any) {
       console.error("Upload error:", err);
-      alert(err?.response?.data?.error || "Failed to upload image. Please try a smaller file.");
+      toast.error(err?.response?.data?.error || "Failed to upload image. Please try a smaller file.");
     } finally {
       setUploading(false);
     }
@@ -104,7 +105,7 @@ export default function SettingsPage() {
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
     } catch (err) {
-      alert("Failed to update profile");
+      toast.error("Failed to update profile");
     } finally {
       setLoading(false);
     }

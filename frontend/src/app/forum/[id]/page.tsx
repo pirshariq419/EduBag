@@ -2,6 +2,7 @@
 import { useEffect, useState, use } from "react";
 import api from "@/lib/api";
 import { useAuthStore } from "@/store/authStore";
+import { toast } from "@/store/toastStore";
 import { formatDistanceToNow } from "date-fns";
 import { ThumbsUp, MessageSquare, Trash2, ChevronLeft, Send, Share2, BookmarkPlus } from "lucide-react";
 import Link from "next/link";
@@ -23,7 +24,7 @@ export default function PostDetailPage({ params }: { params: Promise<{ id: strin
       setPost(res.data.data.post);
       setComments(res.data.data.comments);
     } catch (err) {
-      alert("Post not found");
+      toast.error("Post not found");
       router.push("/forum");
     } finally {
       setLoading(false);
@@ -35,7 +36,7 @@ export default function PostDetailPage({ params }: { params: Promise<{ id: strin
   }, [unwrappedParams.id]);
 
   const handleUpvote = async () => {
-    if (!user) return alert("Log in to upvote");
+    if (!user) return toast.warning("Log in to upvote");
     try {
       await api.put(`/forum/posts/${post._id}/upvote`);
       setPost({
@@ -49,7 +50,7 @@ export default function PostDetailPage({ params }: { params: Promise<{ id: strin
 
   const handleCommentSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user) return alert("Log in to comment");
+    if (!user) return toast.warning("Log in to comment");
     if (!newComment.trim()) return;
 
     setSubmitting(true);
@@ -59,7 +60,7 @@ export default function PostDetailPage({ params }: { params: Promise<{ id: strin
       setNewComment("");
       setPost({ ...post, commentCount: post.commentCount + 1 });
     } catch (err: any) {
-      alert(err.response?.data?.error || "Failed to post comment");
+      toast.error(err.response?.data?.error || "Failed to post comment");
     } finally {
       setSubmitting(false);
     }
@@ -71,7 +72,7 @@ export default function PostDetailPage({ params }: { params: Promise<{ id: strin
       await api.delete(`/forum/posts/${post._id}`);
       router.push("/forum");
     } catch {
-      alert("Failed to delete");
+      toast.error("Failed to delete");
     }
   };
 
@@ -82,7 +83,7 @@ export default function PostDetailPage({ params }: { params: Promise<{ id: strin
       setComments(comments.filter(c => c._id !== commentId));
       setPost({ ...post, commentCount: post.commentCount - 1 });
     } catch {
-      alert("Failed to delete comment");
+      toast.error("Failed to delete comment");
     }
   };
 
@@ -91,7 +92,7 @@ export default function PostDetailPage({ params }: { params: Promise<{ id: strin
       navigator.share({ title: post.title, url: window.location.href });
     } else {
       navigator.clipboard.writeText(window.location.href);
-      alert("Link copied to clipboard!");
+      toast.success("Link copied to clipboard!");
     }
   };
 

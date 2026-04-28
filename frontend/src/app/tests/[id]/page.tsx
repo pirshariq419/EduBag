@@ -2,6 +2,7 @@
 import { useEffect, useState, use } from "react";
 import api from "@/lib/api";
 import { useRouter } from "next/navigation";
+import { toast } from "@/store/toastStore";
 import { Clock, CheckCircle2, XCircle, AlertCircle, Play, FileText, ChevronLeft, ChevronRight, BarChart3 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -58,7 +59,7 @@ export default function TestTakingPage({ params }: { params: Promise<{ id: strin
         setAnswers(new Array(t.questions.length).fill(-1));
         setTimeLeft(t.durationMinutes * 60);
       } catch (err) {
-        alert("Failed to load test. You may need to log in.");
+        toast.error("Failed to load test. You may need to log in.");
         router.push("/tests");
       } finally {
         setLoading(false);
@@ -98,7 +99,7 @@ export default function TestTakingPage({ params }: { params: Promise<{ id: strin
       setFullTest(res.data.data.test);
       setTestState('analysis');
     } catch (err) {
-      alert("Failed to submit test. Please try again.");
+      toast.error("Failed to submit test. Please try again.");
       setTestState('active');
     }
   };

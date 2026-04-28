@@ -7,6 +7,7 @@ import {
   BookOpen, GraduationCap, Calendar, Search, Sparkles, Zap, X, Eye
 } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
+import { toast } from "@/store/toastStore";
 import Image from "next/image";
 import api from "@/lib/api";
 import availablePyqsRaw from "@/data/availablePyqs.json";
@@ -608,7 +609,7 @@ function YearSection({ yearData, isOpen, onToggle, onViewPdf }: any) {
                   transition={{ delay: idx * 0.05 }}
                   onClick={() => {
                     if (isComingSoon) {
-                      alert(yearData.year === 2026 ? "This resource is coming soon!" : "This resource is not available currently.");
+                      toast.info(yearData.year === 2026 ? "This resource is coming soon!" : "This resource is not available currently.");
                       return;
                     }
                     onViewPdf(sub.url, sub.name);
