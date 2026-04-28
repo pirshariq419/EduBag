@@ -49,6 +49,11 @@ app.use('/api/resources', require('./routes/resources'));
 app.use('/api/uploads', require('./routes/uploads'));
 app.use('/api/categories', require('./routes/categories'));
 
+// Health check — used by frontend to wake up Render on first visit
+app.get('/api/health', (req, res) => {
+  res.status(200).json({ status: 'ok' });
+});
+
 // Default Route
 app.get('/', (req, res) => {
   res.send('EduBag API is running');
