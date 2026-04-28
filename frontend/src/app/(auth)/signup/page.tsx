@@ -28,13 +28,38 @@ export default function SignupPage() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Just show a local preview for now
+    // Show a local preview and store the file for later processing
     setAvatarFile(file);
     const reader = new FileReader();
     reader.onloadend = () => {
       setAvatar(reader.result as string);
     };
     reader.readAsDataURL(file);
+  };
+
+  // Helper: compress image to a small base64 data URI
+  const compressToDataUri = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement("canvas");
+          const MAX = 200;
+          let w = img.width, h = img.height;
+          if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
+          else       { w = Math.round(w * MAX / h); h = MAX; }
+          canvas.width = w;
+          canvas.height = h;
+          canvas.getContext("2d")!.drawImage(img, 0, 0, w, h);
+          resolve(canvas.toDataURL("image/jpeg", 0.7));
+        };
+        img.onerror = reject;
+        img.src = reader.result as string;
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -52,19 +77,11 @@ export default function SignupPage() {
       const token = localStorage.getItem("edubag_token");
       if (!token) return;
 
-      // 2. If there's an avatar file, upload it now that we are logged in
+      // 2. If there's an avatar file, convert to base64 and save to DB
       if (avatarFile) {
         setUploading(true);
-        const formData = new FormData();
-        formData.append("file", avatarFile);
-        formData.append("type", "avatar");
-
-        const res = await api.post("/uploads", formData, {
-          headers: { "Content-Type": "multipart/form-data" }
-        });
-        
-        // 3. Update user details with the uploaded avatar URL
-        await api.put("/auth/updatedetails", { avatar: res.data.data });
+        const dataUri = await compressToDataUri(avatarFile);
+        await api.put("/auth/updatedetails", { avatar: dataUri });
         await loadUser();
       }
 

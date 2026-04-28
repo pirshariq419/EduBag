@@ -47,23 +47,38 @@ export default function SettingsPage() {
     if (!file) return;
 
     setUploading(true);
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("type", "avatar");
 
     try {
-      const res = await api.post("/uploads", formData, {
-        headers: { "Content-Type": "multipart/form-data" }
+      // Convert image to a small base64 data URI (stored directly in MongoDB)
+      const dataUri = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const img = new Image();
+          img.onload = () => {
+            const canvas = document.createElement("canvas");
+            const MAX = 200; // 200x200 max for avatars
+            let w = img.width, h = img.height;
+            if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
+            else       { w = Math.round(w * MAX / h); h = MAX; }
+            canvas.width = w;
+            canvas.height = h;
+            canvas.getContext("2d")!.drawImage(img, 0, 0, w, h);
+            resolve(canvas.toDataURL("image/jpeg", 0.7));
+          };
+          img.onerror = reject;
+          img.src = reader.result as string;
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
       });
-      const imageUrl = res.data.data;
-      
+
       // Update local form state
-      setForm(prev => ({ ...prev, avatar: imageUrl }));
+      setForm(prev => ({ ...prev, avatar: dataUri }));
       
-      // Auto-save to database immediately
+      // Save directly to database (no file upload needed)
       await api.put("/auth/updatedetails", { 
-        ...form, // Use current form state
-        avatar: imageUrl 
+        ...form,
+        avatar: dataUri 
       });
       
       // Reload user in auth store
