@@ -29,17 +29,22 @@ export default function SettingsPage() {
     examTarget: "General",
     avatar: ""
   });
+  const [customExam, setCustomExam] = useState("");
   const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     if (user) {
+      const target = user.examTarget || "General";
+      const isStandard = ["General", "NEET", "JEE", "BOARDS", "OTHER", "N/A"].includes(target);
+
       setForm({
         name: user.name,
         email: user.email || "",
         phone: user.phone || "",
-        examTarget: user.examTarget || "General",
+        examTarget: isStandard ? target : "OTHER",
         avatar: user.avatar || ""
       });
+      if (!isStandard) setCustomExam(target);
     }
   }, [user]);
 
@@ -79,6 +84,7 @@ export default function SettingsPage() {
       // Save directly to database (no file upload needed)
       await api.put("/auth/updatedetails", { 
         ...form,
+        examTarget: form.examTarget === "OTHER" && customExam.trim() ? customExam.trim() : form.examTarget,
         avatar: dataUri 
       });
       
@@ -100,7 +106,10 @@ export default function SettingsPage() {
     setLoading(true);
     setSuccess(false);
     try {
-      await api.put("/auth/updatedetails", form);
+      await api.put("/auth/updatedetails", {
+        ...form,
+        examTarget: form.examTarget === "OTHER" && customExam.trim() ? customExam.trim() : form.examTarget
+      });
       await loadUser();
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
@@ -297,6 +306,25 @@ export default function SettingsPage() {
                               <option className="bg-[#1a1b23]" value="OTHER">Other Exams</option>
                             </select>
                           </div>
+                          <AnimatePresence>
+                            {form.examTarget === "OTHER" && (
+                              <motion.div
+                                initial={{ opacity: 0, height: 0, marginTop: 0 }}
+                                animate={{ opacity: 1, height: "auto", marginTop: 12 }}
+                                exit={{ opacity: 0, height: 0, marginTop: 0 }}
+                                className="overflow-hidden"
+                              >
+                                <input
+                                  type="text"
+                                  value={customExam}
+                                  onChange={(e) => setCustomExam(e.target.value)}
+                                  placeholder="Specify your exam (e.g. CUET, NDA)"
+                                  required={form.examTarget === "OTHER"}
+                                  className="w-full px-6 py-5 rounded-2xl bg-white/5 border border-white/10 focus:border-indigo-500 outline-none font-bold text-sm transition-all"
+                                />
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
                         </div>
                       </div>
 

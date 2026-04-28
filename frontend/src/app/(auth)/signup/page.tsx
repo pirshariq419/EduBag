@@ -15,9 +15,9 @@ export default function SignupPage() {
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [examTarget, setExamTarget] = useState("N/A");
+  const [customExam, setCustomExam] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  
   const [avatar, setAvatar] = useState<string | null>(null);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -72,7 +72,8 @@ export default function SignupPage() {
 
     try {
       // 1. Register the user
-      await register(name, email, phone, password, examTarget);
+      const finalExamTarget = examTarget === "OTHER" && customExam.trim() !== "" ? customExam.trim() : examTarget;
+      await register(name, email, phone, password, finalExamTarget);
       
       // Check if registration was successful (token exists)
       const token = localStorage.getItem("edubag_token");
@@ -198,9 +199,9 @@ export default function SignupPage() {
                   type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Min. 6 characters"
+                  placeholder="Min. 8 characters"
                   required
-                  minLength={6}
+                  minLength={8}
                   className="w-full px-4 py-3 rounded-md border border-[#2d2f31] dark:border-white/20 bg-transparent focus:outline-none focus:ring-1 focus:ring-[#2d2f31] dark:focus:ring-white transition text-sm font-medium pr-12 dark:text-white"
                 />
                 <button
@@ -263,6 +264,26 @@ export default function SignupPage() {
                         ))}
                       </motion.div>
                     </>
+                  )}
+                </AnimatePresence>
+
+                <AnimatePresence>
+                  {examTarget === "OTHER" && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0, marginTop: 0 }}
+                      animate={{ opacity: 1, height: "auto", marginTop: 12 }}
+                      exit={{ opacity: 0, height: 0, marginTop: 0 }}
+                      className="overflow-hidden"
+                    >
+                      <input
+                        type="text"
+                        value={customExam}
+                        onChange={(e) => setCustomExam(e.target.value)}
+                        placeholder="Please specify your exam (e.g. CUET, NDA)"
+                        required={examTarget === "OTHER"}
+                        className="w-full px-4 py-3 rounded-md border border-[#2d2f31] dark:border-white/20 bg-transparent focus:outline-none focus:ring-1 focus:ring-[#2d2f31] dark:focus:ring-white transition text-sm font-medium dark:text-white"
+                      />
+                    </motion.div>
                   )}
                 </AnimatePresence>
               </div>

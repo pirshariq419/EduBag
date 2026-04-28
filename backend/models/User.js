@@ -7,7 +7,7 @@ const UserSchema = new mongoose.Schema({
   phone: { type: String, unique: true, sparse: true },
   password: { type: String, required: true, select: false },
   role: { type: String, enum: ['user', 'admin'], default: 'user' },
-  examTarget: { type: String, enum: ['JEE', 'NEET', 'BOARDS', 'OTHER', 'N/A'], default: 'N/A' },
+  examTarget: { type: String, default: 'N/A' },
   preferences: [String],
   savedResources: [{ type: mongoose.Schema.ObjectId, ref: 'Note' }],
   subscriptionEnd: Date,

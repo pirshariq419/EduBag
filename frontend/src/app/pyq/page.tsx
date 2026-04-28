@@ -11,6 +11,9 @@ import { toast } from "@/store/toastStore";
 import Image from "next/image";
 import api from "@/lib/api";
 import availablePyqsRaw from "@/data/availablePyqs.json";
+import dynamic from "next/dynamic";
+
+const PdfViewerModal = dynamic(() => import("@/components/PdfViewerModal"), { ssr: false });
 
 const availablePyqs = (availablePyqsRaw as string[]).map(p => {
   const normalized = p.replace(/\\/g, "/");
@@ -329,7 +332,17 @@ export default function PYQPage() {
         <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-lg overflow-hidden border border-slate-200 dark:border-white/10 mb-8 transition-all hover:shadow-xl">
           <div className="p-1">
             <button
-              onClick={() => setOpenId(openId === "jkbose" ? null : "jkbose")}
+              onClick={(e) => {
+                const target = e.currentTarget;
+                const isOpening = openId !== "jkbose";
+                setOpenId(isOpening ? "jkbose" : null);
+                if (isOpening) {
+                  setTimeout(() => {
+                    const y = target.getBoundingClientRect().top + window.scrollY - 100;
+                    window.scrollTo({ top: y, behavior: 'smooth' });
+                  }, 300);
+                }
+              }}
               className={`w-full p-8 flex flex-col items-center justify-center gap-6 transition-all duration-500 rounded-[2rem] ${
                 openId === "jkbose" ? "bg-slate-900 dark:bg-slate-800 text-white" : "hover:bg-slate-50 dark:hover:bg-slate-800/80"
               }`}
@@ -415,7 +428,17 @@ export default function PYQPage() {
           {otherCategories.map((cat: any) => (
             <div key={cat.id} className="relative group">
               <button
-                onClick={() => setOpenId(openId === cat.id ? null : cat.id)}
+                onClick={(e) => {
+                  const target = e.currentTarget;
+                  const isOpening = openId !== cat.id;
+                  setOpenId(isOpening ? cat.id : null);
+                  if (isOpening) {
+                    setTimeout(() => {
+                      const y = target.getBoundingClientRect().top + window.scrollY - 100;
+                      window.scrollTo({ top: y, behavior: 'smooth' });
+                    }, 300);
+                  }
+                }}
                 className={`w-full py-6 px-8 rounded-[2rem] flex items-center justify-between gap-4 font-bold transition-all duration-300 shadow-sm border border-slate-200 dark:border-white/10 ${
                   openId === cat.id 
                   ? "bg-slate-900 dark:bg-slate-800 text-white translate-y-[-2px] shadow-lg" 
@@ -480,69 +503,11 @@ export default function PYQPage() {
       {/* Inline PDF Viewer Overlay */}
       <AnimatePresence>
         {viewerPdf && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex flex-col"
-          >
-            <div className="flex items-center justify-between px-4 md:px-8 py-4 bg-slate-900 border-b border-white/10 shrink-0">
-              <div className="flex items-center gap-3 min-w-0">
-                <div className="w-9 h-9 rounded-xl bg-indigo-500/20 flex items-center justify-center shrink-0">
-                  <FileText className="w-4 h-4 text-indigo-400" />
-                </div>
-                <h3 className="text-white font-bold truncate text-sm md:text-base">{viewerPdf.name}</h3>
-              </div>
-              <div className="flex items-center gap-2 shrink-0">
-                <a
-                  href={viewerPdf.url}
-                  download
-                  className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all"
-                >
-                  <Download className="w-3.5 h-3.5" /> Download
-                </a>
-                <button
-                  onClick={() => setViewerPdf(null)}
-                  className="p-2.5 hover:bg-white/10 rounded-xl text-slate-400 hover:text-white transition-all"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-            </div>
-            <div className="flex-1 min-h-0 bg-slate-950/50 flex items-center justify-center">
-              {(() => {
-                const isLocalhost = typeof window !== "undefined" && (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1");
-                const isAsset = viewerPdf.url.startsWith("/");
-                
-                // On live server, use Google Docs Viewer for EVERYTHING (including local assets)
-                // On localhost, use direct iframe for local assets, Google for external http links
-                if (!isLocalhost || (viewerPdf.url.startsWith("http") && !viewerPdf.url.includes("localhost"))) {
-                  const absoluteUrl = isAsset ? `${window.location.origin}${viewerPdf.url}` : viewerPdf.url;
-                  return (
-                    <iframe
-                      src={`https://docs.google.com/gview?url=${encodeURIComponent(absoluteUrl)}&embedded=true`}
-                      className="w-full h-full border-0 bg-white"
-                      title={viewerPdf.name}
-                    />
-                  );
-                }
-                
-                return (
-                  <object
-                    data={viewerPdf.url}
-                    type="application/pdf"
-                    className="w-full h-full border-0 bg-white"
-                  >
-                    <iframe
-                      src={viewerPdf.url}
-                      className="w-full h-full border-0 bg-white"
-                      title={viewerPdf.name}
-                    />
-                  </object>
-                );
-              })()}
-            </div>
-          </motion.div>
+          <PdfViewerModal
+            url={viewerPdf.url}
+            name={viewerPdf.name}
+            onClose={() => setViewerPdf(null)}
+          />
         )}
       </AnimatePresence>
     </div>
