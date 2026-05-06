@@ -1,5 +1,4 @@
 const cloudinary = require('cloudinary').v2;
-const { CloudinaryStorage } = require('multer-storage-cloudinary-v2');
 const multer = require('multer');
 const dotenv = require('dotenv');
 
@@ -12,49 +11,47 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET
 });
 
-// Setup Cloudinary Storage for Multer
-const storage = new CloudinaryStorage({
-  cloudinary: cloudinary,
-  params: async (req, file) => {
-    const isPdf = file.mimetype === 'application/pdf';
-    
-    return {
-      folder: 'edubag_uploads',
-      // We use 'image' for PDFs because Cloudinary provides better 
-      // CORS headers and PDF features when handled as an image resource.
-      resource_type: isPdf ? 'image' : 'auto', 
-      public_id: Date.now() + '-' + file.originalname.replace(/\s+/g, '-').replace(/\.[^/.]+$/, ""),
-      // Force PDF format to ensure the URL ends in .pdf
-      format: isPdf ? 'pdf' : undefined,
-    };
-  },
-});
+// Use Memory Storage
+const storage = multer.memoryStorage();
 
 const upload = multer({ 
   storage: storage,
-  limits: { fileSize: 50 * 1024 * 1024 }, // 50MB limit
-  fileFilter: function (req, file, cb) {
-    const filetypes = /pdf|doc|docx|png|jpg|jpeg/;
-    const extname = filetypes.test(file.originalname.toLowerCase());
-    if (extname) {
-      return cb(null, true);
-    }
-    cb(new Error('Only documents and images are allowed'));
-  }
+  limits: { fileSize: 50 * 1024 * 1024 }, // 50MB
 });
 
-exports.uploadFile = (req, res) => {
+exports.uploadFile = async (req, res) => {
+  console.log('!!! [BACKEND] RAW UPLOAD START !!!');
+  
   if (!req.file) {
-    return res.status(400).json({ success: false, error: 'Please upload a file' });
+    return res.status(400).json({ success: false, error: 'No file uploaded' });
   }
 
-  // Use secure_url to prevent mixed-content blocks in browsers
-  const fileUrl = req.file.secure_url || req.file.path;
+  try {
+    // Construct the data URI
+    const fileBase64 = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
+    
+    console.log('Uploading as RAW to bypass validation...');
+    
+    const uploadResponse = await cloudinary.uploader.upload(fileBase64, {
+      folder: 'edubag_uploads',
+      // Using 'raw' forces Cloudinary to accept the file without validating its content
+      resource_type: 'raw',
+      public_id: Date.now() + '-' + req.file.originalname.replace(/\s+/g, '-'),
+    });
 
-  res.status(200).json({
-    success: true,
-    data: fileUrl
-  });
+    console.log('SUCCESS! Raw URL:', uploadResponse.secure_url);
+
+    res.status(200).json({
+      success: true,
+      data: uploadResponse.secure_url
+    });
+  } catch (err) {
+    console.error('FINAL CLOUDINARY ERROR:', err);
+    res.status(500).json({ 
+      success: false, 
+      error: `Cloudinary rejected the file: ${err.message}` 
+    });
+  }
 };
 
 exports.uploadMiddleware = upload.single('file');

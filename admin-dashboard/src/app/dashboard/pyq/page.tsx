@@ -85,7 +85,8 @@ export default function PYQPage() {
       });
       setForm(p => ({ ...p, fileUrl: res.data.data }));
     } catch (err: any) {
-      toast.error(err?.response?.data?.error || "Upload failed");
+      console.error("DEBUG: Upload Error:", err);
+      toast.error(err?.response?.data?.error || "Upload failed. Check console.");
     } finally {
       setUploading(false);
     }
@@ -310,13 +311,13 @@ export default function PYQPage() {
                   <input type="file" accept=".pdf" className="hidden" onChange={handleFileUpload} disabled={uploading} />
                   {uploading ? (
                     <><Loader2 className="w-5 h-5 animate-spin text-indigo-400" />
-                    <span className="text-xs font-bold uppercase tracking-widest text-indigo-400">Uploading...</span></>
+                      <span className="text-xs font-bold uppercase tracking-widest text-indigo-400">Uploading...</span></>
                   ) : form.fileUrl ? (
                     <><FileText className="w-5 h-5" style={{ color: "#10b981" }} />
-                    <span className="text-xs font-bold text-emerald-400">✓ File uploaded — Click to replace</span></>
+                      <span className="text-xs font-bold text-emerald-400">✓ File uploaded — Click to replace</span></>
                   ) : (
                     <><FileText className="w-5 h-5 text-slate-500" />
-                    <span className="text-xs font-bold uppercase tracking-widest text-slate-400">Click to upload PDF</span></>
+                      <span className="text-xs font-bold uppercase tracking-widest text-slate-400">Click to upload PDF</span></>
                   )}
                 </label>
                 {form.fileUrl && (
