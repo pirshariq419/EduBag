@@ -3,12 +3,13 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
-  MessageSquare, X, Send, Bot, 
+  MessageSquare, X, Send, BrainCircuit, 
   ArrowRight, Loader2, ChevronDown
 } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import api from "@/lib/api";
 
 interface Message {
   role: 'bot' | 'user';
@@ -32,11 +33,11 @@ export default function EduBot() {
   const [messages, setMessages] = useState<Message[]>([
     { 
       role: 'bot', 
-      text: `Hi ${user?.name?.split(' ')[0] || 'there'}! I'm EduBot, your personal study assistant. How can I help you ace your exams today?`,
+      text: `Hi ${user?.name?.split(' ')[0] || 'there'}! I'm EduBot, your personal AI tutor. How can I help you ace your exams today?`,
       links: [
         { label: "Find PYQs", href: "/pyq" },
         { label: "View Syllabus", href: "/syllabus" },
-        { label: "College Guide", href: "/colleges" }
+        { label: "Mock Tests", href: "/tests" }
       ]
     }
   ]);
@@ -47,42 +48,46 @@ export default function EduBot() {
     }
   }, [messages, isTyping]);
 
-  const handleSend = (e?: React.FormEvent) => {
+  const handleSend = async (e?: React.FormEvent) => {
     e?.preventDefault();
-    if (!input.trim()) return;
+    if (!input.trim() || isTyping) return;
+
+    if (!user) {
+      setMessages(prev => [
+        ...prev, 
+        { role: 'user', text: input },
+        { role: 'bot', text: "Please log in or create an account to chat with me! I need to know who I'm teaching.", links: [{ label: "Login / Register", href: "/login" }] }
+      ]);
+      setInput("");
+      return;
+    }
 
     const userMsg = input;
     setInput("");
-    setMessages(prev => [...prev, { role: 'user', text: userMsg }]);
-
+    
+    const newMessages: Message[] = [...messages, { role: 'user', text: userMsg }];
+    setMessages(newMessages);
     setIsTyping(true);
-    setTimeout(() => {
-      let response: Message = { role: 'bot', text: "" };
-      const query = userMsg.toLowerCase();
 
-      if (query.includes("pyq") || query.includes("paper")) {
-        response.text = "I can definitely help! We have past papers from 2013-2024 organized by year and subject.";
-        response.links = [{ label: "Go to PYQ Bank", href: "/pyq" }];
-      } else if (query.includes("syllabus")) {
-        response.text = "You can view the updated syllabus for JKBOSE, NEET, and JEE here:";
-        response.links = [{ label: "Official Syllabus", href: "/syllabus" }];
-      } else if (query.includes("college") || query.includes("admission")) {
-        response.text = "I can show you all the top colleges in Jammu and Kashmir, including cutoff info.";
-        response.links = [{ label: "Explore Colleges", href: "/colleges" }];
-      } else if (query.includes("pro") || query.includes("premium")) {
-        response.text = "EduBag Pro is our best value plan—₹99 for lifetime access to everything!";
-        response.links = [{ label: "View Pro Plans", href: "/pricing" }];
+    try {
+      // Map to just role and text for the API
+      const apiMessages = newMessages.map(m => ({ role: m.role, text: m.text }));
+      
+      const res = await api.post("/ai/chat", { messages: apiMessages });
+      
+      setMessages(prev => [...prev, { role: 'bot', text: res.data.data }]);
+    } catch (err: any) {
+      console.error("Chat error:", err);
+      if (err?.response?.status === 401) {
+        setMessages(prev => [...prev, { role: 'bot', text: "Your session has expired. Please log in again to continue chatting.", links: [{ label: "Login", href: "/login" }] }]);
+      } else if (err?.response?.status === 429) {
+        setMessages(prev => [...prev, { role: 'bot', text: "Whoa, slow down! Let me process your previous questions first. Give me a minute." }]);
       } else {
-        response.text = "I'm still learning! But I can help you find study materials, papers, or college info. What do you need?";
-        response.links = [
-          { label: "Study Materials", href: "/learn" },
-          { label: "Contact Us", href: "/settings" }
-        ];
+        setMessages(prev => [...prev, { role: 'bot', text: "I'm having trouble connecting to my brain right now. Please try again later." }]);
       }
-
-      setMessages(prev => [...prev, response]);
+    } finally {
       setIsTyping(false);
-    }, 1200);
+    }
   };
 
   return (
@@ -93,27 +98,29 @@ export default function EduBot() {
             initial={{ opacity: 0, y: 20, scale: 0.9, originY: 1, originX: 1 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.9 }}
-            className="pointer-events-auto mb-4 w-[90vw] sm:w-[380px] max-h-[70vh] h-[550px] bg-white dark:bg-[#0c0d12] rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.3)] border border-slate-200 dark:border-white/10 flex flex-col overflow-hidden"
+            className="pointer-events-auto mb-4 w-[calc(100vw-32px)] sm:w-[380px] h-[65vh] sm:h-[550px] max-h-[600px] bg-white dark:bg-[#0c0d12] rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.3)] border border-slate-200 dark:border-white/10 flex flex-col overflow-hidden"
           >
             {/* Header */}
-            <div className="shrink-0 p-5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center border border-white/20">
-                  <Bot className="w-5 h-5" />
+            <div className="shrink-0 p-5 bg-slate-900 dark:bg-[#12131a] text-white flex items-center justify-between border-b border-slate-200 dark:border-white/5 relative overflow-hidden">
+              <div className="absolute top-[-50%] right-[-10%] w-32 h-32 bg-[#a435f0]/20 rounded-full blur-[40px]" />
+              <div className="flex items-center gap-3 relative z-10">
+                <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-[#a435f0] to-[#8710d8] flex items-center justify-center shadow-lg shadow-purple-500/30">
+                  <BrainCircuit className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <h3 className="font-black text-xs tracking-tight uppercase">EduBot Assistant</h3>
+                  <h3 className="font-black text-sm tracking-tight text-white">EduBot AI</h3>
                   <div className="flex items-center gap-1.5 mt-0.5">
-                    <div className="w-1.5 h-1.5 rounded-full bg-green-400" />
-                    <span className="text-[10px] font-bold opacity-80 uppercase tracking-widest">Always Active</span>
+                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                    <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest">Online</span>
                   </div>
                 </div>
               </div>
               <button 
                 onClick={() => setIsOpen(false)}
-                className="p-2 hover:bg-black/10 rounded-xl transition-all"
+                className="p-2 hover:bg-white/10 rounded-xl transition-all relative z-20"
+                aria-label="Close chat"
               >
-                <ChevronDown className="w-5 h-5" />
+                <ChevronDown className="w-6 h-6 text-slate-400 hover:text-white transition-colors" />
               </button>
             </div>
 
@@ -190,7 +197,7 @@ export default function EduBot() {
         whileTap={{ scale: 0.95 }}
         onClick={() => setIsOpen(!isOpen)}
         className={`pointer-events-auto w-16 h-16 rounded-[1.5rem] shadow-2xl flex items-center justify-center transition-all relative group overflow-hidden ${
-          isOpen ? 'bg-slate-900 text-white rotate-90' : 'bg-indigo-600 text-white'
+          isOpen ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 rotate-90 shadow-none' : 'bg-gradient-to-br from-[#a435f0] to-[#8710d8] text-white shadow-purple-500/30'
         }`}
       >
         <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />

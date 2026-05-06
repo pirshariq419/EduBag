@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import ToastContainer from "@/components/ToastContainer";
+import ConfirmDialog from "@/components/ConfirmDialog";
 
 export const metadata: Metadata = {
   title: "EduBag Admin — Control Center",
@@ -16,7 +18,11 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className="bg-[#0a0a0f]">{children}</body>
+      <body className="bg-[#0a0a0f]">
+        <ToastContainer />
+        <ConfirmDialog />
+        {children}
+      </body>
     </html>
   );
 }

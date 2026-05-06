@@ -6,6 +6,11 @@ const CollegeSchema = new mongoose.Schema({
   image: String,
   websiteUrl: String,
   description: String,
+  category: {
+    type: String,
+    enum: ['Medical', 'Engineering', 'General'],
+    default: 'General'
+  },
   courses: [{
     name: String,
     duration: String,

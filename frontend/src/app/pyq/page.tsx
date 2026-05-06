@@ -3,23 +3,16 @@
 import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
-  ChevronDown, ChevronUp, FileText, Download,
-  BookOpen, GraduationCap, Calendar, Search, Sparkles, Zap, X, Eye
+  ChevronDown, FileText,
+  BookOpen, Calendar, Sparkles, Zap, Eye, Search
 } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import { toast } from "@/store/toastStore";
 import Image from "next/image";
 import api from "@/lib/api";
-import availablePyqsRaw from "@/data/availablePyqs.json";
 import dynamic from "next/dynamic";
 
 const PdfViewerModal = dynamic(() => import("@/components/PdfViewerModal"), { ssr: false });
-
-const availablePyqs = (availablePyqsRaw as string[]).map(p => {
-  const normalized = p.replace(/\\/g, "/");
-  const split = normalized.split("/public/");
-  return split.length > 1 ? "/" + split[1] : normalized;
-});
 
 interface Subject {
   name: string;
@@ -44,266 +37,134 @@ interface ExamCategory {
   years?: YearData[];
 }
 
-// Helper to generate years range
-const generateYears = (examId: string, className: string, start: number, end: number, subjects: string[]): YearData[] => {
-  const years: YearData[] = [];
-  for (let y = start; y >= end; y--) {
-    let currentSubjects = subjects;
-    
-    if (examId === "jkbose" && className === "class-10th" && y >= 2020 && y <= 2025) {
-      currentSubjects = currentSubjects.filter(s => s !== "Hindi");
-    }
-
-    years.push({
-      year: y,
-      subjects: currentSubjects.map(s => {
-        let fileName = "";
-        let folderPath = `/assets/pyq/${examId}`;
-        
-        if (examId === "jkbose") {
-          const shortClass = className.replace("class-", ""); // 10th, 11th, 12th
-          folderPath = `/assets/pyq/jkbose/${shortClass}`;
-          fileName = `Class ${shortClass} ${s} ${y}.pdf`;
-        } else if (examId === "neet-ug") {
-          folderPath = `/assets/pyq/neet ug`;
-          fileName = y === 2025 ? `NEET Paper 2025.pdf` : `NEET ${y} Paper.pdf`;
-        } else if (examId === "neet-pg") {
-          folderPath = `/assets/pyq/neet pg`;
-          fileName = y === 2025 ? `NEET PG Paper 2025.pdf` : `NEET PG ${y} Paper.pdf`;
-        } else if (examId === "jee-advanced") {
-          folderPath = `/assets/pyq/jee advanced`;
-          fileName = `JEE Adv ${y} Paper.pdf`;
-        } else if (examId === "skaust") {
-          folderPath = `/assets/pyq/skaust_k`;
-          fileName = `SKAUST-K UET ${y}.pdf`;
-        } else if (examId === "jkbopee") {
-          folderPath = `/assets/pyq/jkbopee bsc nursing`;
-          fileName = `JKBOPEE B.Sc Nursing ${y}.pdf`;
-        } else if (examId === "upsc-ias") {
-          folderPath = `/assets/pyq/upsc ias`;
-          fileName = `UPSC IAS Paper ${y}.pdf`;
-        }
-
-        return {
-          name: s,
-          url: `${folderPath}/${fileName}`
-        };
-      })
-    });
-  }
-  return years;
-};
-
-// Helper for JEE Mains shifts
-const generateJeeMainsYears = (start: number, end: number): YearData[] => {
-  const years: YearData[] = [];
-  for (let y = start; y >= end; y--) {
-    years.push({
-      year: y,
-      subjects: [
-        { name: "Shift 1 - Question Paper", url: `/assets/pyq/jee mains/JEE ${y}(Shift-1) Paper.pdf` },
-        { name: "Shift 2 - Question Paper", url: `/assets/pyq/jee mains/JEE ${y}(Shift-2) Paper.pdf` },
-        { name: "Shift 3 - Question Paper", url: `/assets/pyq/jee mains/JEE ${y}(Shift-3) Paper.pdf` },
-      ]
-    });
-  }
-  return years;
-};
-
-const pyqData: ExamCategory[] = [
-  {
-    id: "jkbose",
-    name: "JKBOSE",
-    logo: "/images/jkbose.png",
-    classes: [
-      { 
-        name: "Class 10th", 
-        years: generateYears("jkbose", "class-10th", 2026, 2020, ["English", "Maths", "Science", "Social Science", "Urdu", "Hindi"]) 
-      },
-      { 
-        name: "Class 11th", 
-        years: generateYears("jkbose", "class-11th", 2026, 2020, ["English", "Physics", "Chemistry", "Zoology", "Botany", "Maths", "Phy. Edu.", "Political Science", "Geography", "History"]) 
-      },
-      { 
-        name: "Class 12th", 
-        years: generateYears("jkbose", "class-12th", 2026, 2020, ["English", "Physics", "Chemistry", "Zoology", "Botany", "Maths", "Phy. Edu.", "History"]) 
-      }
-    ]
-  },
-  {
-    id: "neet-ug",
-    name: "NEET UG",
-    logo: "/images/neetug.png",
-    years: generateYears("neet-ug", "", 2026, 2013, ["Question Paper"])
-  },
-  {
-    id: "jee-mains",
-    name: "JEE Mains",
-    logo: "/images/jeemain.png",
-    years: generateJeeMainsYears(2026, 2013)
-  },
-  {
-    id: "jee-advanced",
-    name: "JEE Advanced",
-    logo: "/images/jeeadvanced.jpg",
-    years: generateYears("jee-advanced", "", 2026, 2013, ["Question Paper"])
-  },
-  {
-    id: "neet-pg",
-    name: "NEET PG",
-    logo: "/images/neetpg.jpg",
-    years: generateYears("neet-pg", "", 2026, 2020, ["Question Paper"])
-  },
-  {
-    id: "jkbopee",
-    name: "JKBOPEE Nursing",
-    logo: "/images/jkbopeeb.jpg",
-    years: generateYears("jkbopee", "", 2026, 2020, ["Question Paper"])
-  },
-  {
-    id: "skaust",
-    name: "SKAUST-K UET",
-    logo: "/images/skaustsyl.jpg",
-    years: generateYears("skaust", "", 2026, 2018, ["Question Paper"])
-  },
-  {
-    id: "upsc-ias",
-    name: "UPSC IAS",
-    logo: "/images/ias.png",
-    years: generateYears("upsc-ias", "", 2026, 2025, ["UPSC IAS Paper"])
-  }
-];
-
 export default function PYQPage() {
   const [openId, setOpenId] = useState<string | null>(null);
   const [openClass, setOpenClass] = useState<string | null>(null);
   const [openYear, setOpenYear] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [dynamicData, setDynamicData] = useState<ExamCategory[]>([]);
   const [viewerPdf, setViewerPdf] = useState<{ url: string; name: string } | null>(null);
   const { user } = useAuthStore();
+
   const [categories, setCategories] = useState<any[]>([]);
+  const [resources, setResources] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Fetch Categories (Exams)
-        const catRes = await api.get("/categories");
-        setCategories(catRes.data.data);
-
-        // Fetch Resources
-        const res = await api.get("/resources?type=pyq");
-        const resources = res.data.data || [];
-        
-        const grouped: ExamCategory[] = [];
-        resources.forEach((r: any) => {
-           // Normalize exam to slug: "NEET UG" → "neet-ug", "JKBOSE" → "jkbose"
-           const examSlug = r.exam.toLowerCase().replace(/\s+/g, '-');
-           let exam = grouped.find(e => e.id === examSlug);
-           if (!exam) {
-             exam = { id: examSlug, name: r.exam, classes: [] };
-             grouped.push(exam);
-           }
-           
-           if (r.class) {
-             let cls = exam.classes?.find(c => c.name === r.class);
-             if (!cls) {
-               cls = { name: r.class, years: [] };
-               exam.classes?.push(cls);
-             }
-             
-             let yr = cls.years.find(y => y.year === r.year);
-             if (!yr) {
-               yr = { year: r.year, subjects: [] };
-               cls.years.push(yr);
-             }
-             yr.subjects.push({ name: r.title, url: r.fileUrl });
-           } else if (r.year) {
-              // Direct year-based subjects (like NEET)
-              if (!exam.years) exam.years = [];
-              let yr = exam.years.find(y => y.year === r.year);
-              if (!yr) {
-                yr = { year: r.year, subjects: [] };
-                exam.years.push(yr);
-              }
-              yr.subjects.push({ name: r.title, url: r.fileUrl });
-           }
-        });
-        setDynamicData(grouped);
+        const [catRes, resRes] = await Promise.all([
+          api.get("/categories"),
+          api.get("/resources?type=pyq"),
+        ]);
+        setCategories(catRes.data.data || []);
+        setResources(resRes.data.data || []);
       } catch (err) {
         console.error("Failed to fetch data", err);
+      } finally {
+        setLoading(false);
       }
     };
     fetchData();
   }, []);
 
-  const finalData = useMemo(() => {
-    // Start with a clone of hardcoded data
-    let data = JSON.parse(JSON.stringify(pyqData));
-
-    // Filter out unwanted duplicates (like dynamic categories that match hardcoded ones)
-    const validCats = (categories || []).filter(c => c && c.name !== "UPSC" && c.id !== "upsc");
-    const validDyn = (dynamicData || []).filter(d => d && d.name !== "UPSC" && d.id !== "upsc");
-
-    // 1. Merge Dynamic Categories (Exams) from DB
-    validCats.forEach(cat => {
-      if (!cat || cat.type === "syllabus") return;
-      const existing = data.find((e: any) => e.id === cat.id);
-      if (existing) {
-        existing.name = cat.name || existing.name;
-        existing.logo = cat.logo || existing.logo;
-      } else {
-        data.push({ id: cat.id, name: cat.name || "Unknown", logo: cat.logo || null, classes: [], years: [] });
-      }
+  // Build the structured exam data from API responses
+  const examData: ExamCategory[] = useMemo(() => {
+    // Filter resources based on searchTerm
+    const filteredResources = (resources || []).filter((r: any) => {
+      if (!searchTerm.trim()) return true;
+      const search = searchTerm.toLowerCase();
+      return (
+        r.title?.toLowerCase().includes(search) ||
+        r.subject?.toLowerCase().includes(search) ||
+        r.exam?.toLowerCase().includes(search) ||
+        r.class?.toLowerCase().includes(search) ||
+        String(r.year).includes(search)
+      );
     });
 
-    // 2. Merge Dynamic Resources
-    validDyn.forEach(dynExam => {
-      const exam = data.find((e: any) => e.id === dynExam.id);
-      if (exam) {
-        if (dynExam.classes) {
-          dynExam.classes.forEach((dynCls: any) => {
-            let cls = exam.classes?.find((c: any) => c.name === dynCls.name);
-            if (!cls) {
-              cls = { name: dynCls.name, years: [] };
-              exam.classes?.push(cls);
-            }
-            dynCls.years.forEach((dynYr: any) => {
-              let yr = cls.years.find((y: any) => y.year === dynYr.year);
-              if (yr) {
-                dynYr.subjects.forEach((s: any) => {
-                  if (!yr.subjects.find((es: any) => es.url === s.url)) yr.subjects.push(s);
-                });
-              } else {
-                cls.years.push(dynYr);
-              }
-            });
-          });
-        }
-        if (dynExam.years) {
-          if (!exam.years) exam.years = [];
-          dynExam.years.forEach((dynYr: any) => {
-            let yr = exam.years.find((y: any) => y.year === dynYr.year);
-            if (yr) {
-              dynYr.subjects.forEach((s: any) => {
-                if (!yr.subjects.find((es: any) => es.url === s.url)) yr.subjects.push(s);
-              });
-            } else {
-              exam.years.push(dynYr);
-            }
-          });
-        }
-      }
-    });
-    return data;
-  }, [categories, dynamicData]);
+    // Get categories that show on PYQ pages (type === 'pyq' or 'all')
+    const pyqCategories = (categories || []).filter(
+      (c: any) => c && c.type !== "syllabus"
+    );
 
-  const mainCategory = finalData.find((c: any) => c.id === "jkbose");
-  const otherCategories = finalData.filter((c: any) => c.id !== "jkbose");
+    // Build exam data structure
+    const exams: ExamCategory[] = pyqCategories.map((cat: any) => {
+      const exam: ExamCategory = {
+        id: cat.id,
+        name: cat.name,
+        logo: cat.logo,
+      };
+
+      // Get all resources for this exam
+      const examResources = filteredResources.filter(
+        (r: any) => r.exam === cat.id
+      );
+
+      // If we are searching and this exam has no matching resources, we might want to skip it
+      // unless the exam name itself matches.
+      if (searchTerm.trim() && examResources.length === 0 && !cat.name.toLowerCase().includes(searchTerm.toLowerCase())) {
+        return null;
+      }
+
+      // Separate class-based resources from direct year-based
+      const classResources = examResources.filter((r: any) => r.class);
+      const directResources = examResources.filter((r: any) => !r.class);
+
+      // Build class-based structure
+      if (classResources.length > 0) {
+        const classMap: Record<string, YearData[]> = {};
+        classResources.forEach((r: any) => {
+          if (!classMap[r.class]) classMap[r.class] = [];
+          let yearEntry = classMap[r.class].find((y) => y.year === r.year);
+          if (!yearEntry) {
+            yearEntry = { year: r.year, subjects: [] };
+            classMap[r.class].push(yearEntry);
+          }
+          yearEntry.subjects.push({ name: r.title || r.subject, url: r.fileUrl });
+        });
+
+        exam.classes = Object.entries(classMap).map(([name, years]) => ({
+          name,
+          years: years.sort((a, b) => b.year - a.year),
+        }));
+      }
+
+      // Build direct year-based structure
+      if (directResources.length > 0) {
+        const yearMap: Record<number, Subject[]> = {};
+        directResources.forEach((r: any) => {
+          if (!yearMap[r.year]) yearMap[r.year] = [];
+          yearMap[r.year].push({ name: r.title || r.subject, url: r.fileUrl });
+        });
+
+        exam.years = Object.entries(yearMap)
+          .map(([year, subjects]) => ({ year: Number(year), subjects }))
+          .sort((a, b) => b.year - a.year);
+      }
+
+      return exam;
+    }).filter(Boolean) as ExamCategory[];
+
+    return exams;
+  }, [categories, resources, searchTerm]);
+
+  const mainCategory = examData.find((c) => c.id === "jkbose");
+  const otherCategories = examData.filter((c) => c.id !== "jkbose");
 
   const openPdfViewer = (url: string, name: string) => {
     setViewerPdf({ url, name });
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <div className="w-12 h-12 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto" />
+          <p className="text-sm font-bold text-slate-500 uppercase tracking-widest">Loading Papers...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 py-20 px-4 relative overflow-hidden">
@@ -328,104 +189,120 @@ export default function PYQPage() {
           <div className="w-32 h-1.5 bg-gradient-to-r from-indigo-600 to-teal-600 mx-auto rounded-full mt-4 opacity-80" />
         </div>
 
+        {/* Local Search Bar */}
+        <div className="mb-12 relative group max-w-2xl mx-auto">
+          <div className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors">
+            <Search className="w-5 h-5" />
+          </div>
+          <input 
+            type="text"
+            placeholder="Search papers by subject, year or exam (e.g. 'Physics 2024')..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-white/10 rounded-[2rem] py-5 pl-14 pr-6 text-sm md:text-base font-bold focus:outline-none focus:border-indigo-500/50 focus:ring-4 focus:ring-indigo-500/5 transition-all shadow-sm hover:shadow-md dark:text-white"
+          />
+        </div>
+
         {/* Main Content Area (JKBOSE) */}
-        <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-lg overflow-hidden border border-slate-200 dark:border-white/10 mb-8 transition-all hover:shadow-xl">
-          <div className="p-1">
-            <button
-              onClick={(e) => {
-                const target = e.currentTarget;
-                const isOpening = openId !== "jkbose";
-                setOpenId(isOpening ? "jkbose" : null);
-                if (isOpening) {
-                  setTimeout(() => {
-                    const y = target.getBoundingClientRect().top + window.scrollY - 100;
-                    window.scrollTo({ top: y, behavior: 'smooth' });
-                  }, 300);
-                }
-              }}
-              className={`w-full p-8 flex flex-col items-center justify-center gap-6 transition-all duration-500 rounded-[2rem] ${
-                openId === "jkbose" ? "bg-slate-900 dark:bg-slate-800 text-white" : "hover:bg-slate-50 dark:hover:bg-slate-800/80"
-              }`}
-            >
-              <div className="flex flex-col items-center gap-4">
-                <div className={`w-24 h-24 rounded-[2rem] p-3 flex items-center justify-center overflow-hidden transition-all duration-500 shadow-sm ${
-                  openId === "jkbose" ? "bg-white scale-110 shadow-lg" : "bg-slate-50 dark:bg-white/10"
-                }`}>
-                  <Image 
-                    src="/images/jkbose.png" 
-                    alt="JKBOSE" 
-                    width={90} 
-                    height={90} 
-                    style={{ width: "auto", height: "auto" }}
-                    className="object-contain"
-                    onError={(e) => { (e.target as HTMLImageElement).src = "https://via.placeholder.com/90?text=JKBOSE"; }}
-                  />
-                </div>
-                <div className="flex items-center gap-3">
-                  <span className={`text-3xl font-black tracking-tight ${openId === "jkbose" ? "text-white" : "text-slate-900 dark:text-white"}`}>JKBOSE</span>
-                  <div className={`transition-transform duration-500 ${openId === "jkbose" ? "rotate-180 text-indigo-500" : "text-slate-400"}`}>
-                    <ChevronDown className="w-8 h-8" />
+        {mainCategory && (
+          <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-lg overflow-hidden border border-slate-200 dark:border-white/10 mb-8 transition-all hover:shadow-xl">
+            <div className="p-1">
+              <button
+                onClick={(e) => {
+                  const target = e.currentTarget;
+                  const isOpening = openId !== "jkbose";
+                  setOpenId(isOpening ? "jkbose" : null);
+                  if (isOpening) {
+                    setTimeout(() => {
+                      const y = target.getBoundingClientRect().top + window.scrollY - 100;
+                      window.scrollTo({ top: y, behavior: 'smooth' });
+                    }, 300);
+                  }
+                }}
+                className={`w-full p-8 flex flex-col items-center justify-center gap-6 transition-all duration-500 rounded-[2rem] ${
+                  openId === "jkbose" ? "bg-slate-900 dark:bg-slate-800 text-white" : "hover:bg-slate-50 dark:hover:bg-slate-800/80"
+                }`}
+              >
+                <div className="flex flex-col items-center gap-4">
+                  <div className={`w-24 h-24 rounded-[2rem] p-3 flex items-center justify-center overflow-hidden transition-all duration-500 shadow-sm ${
+                    openId === "jkbose" ? "bg-white scale-110 shadow-lg" : "bg-slate-50 dark:bg-white/10"
+                  }`}>
+                    <Image 
+                      src={mainCategory.logo || "/images/jkbose.png"} 
+                      alt="JKBOSE" 
+                      width={90} 
+                      height={90} 
+                      style={{ width: "auto", height: "auto" }}
+                      className="object-contain"
+                      onError={(e) => { (e.target as HTMLImageElement).src = "https://via.placeholder.com/90?text=JKBOSE"; }}
+                    />
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className={`text-3xl font-black tracking-tight ${openId === "jkbose" ? "text-white" : "text-slate-900 dark:text-white"}`}>{mainCategory.name}</span>
+                    <div className={`transition-transform duration-500 ${openId === "jkbose" ? "rotate-180 text-indigo-500" : "text-slate-400"}`}>
+                      <ChevronDown className="w-8 h-8" />
+                    </div>
                   </div>
                 </div>
-              </div>
-            </button>
+              </button>
 
-            <AnimatePresence>
-              {openId === "jkbose" && mainCategory && (
-                <motion.div
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: "auto", opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  className="bg-slate-50 dark:bg-slate-900/50 p-6 md:p-8 space-y-6"
-                >
-                  {mainCategory.classes?.map((cls: any) => {
-                    const isClsOpen = openClass === cls.name;
-                    return (
-                      <div key={cls.name} className="space-y-4">
-                        <button
-                          onClick={() => setOpenClass(isClsOpen ? null : cls.name)}
-                          className={`w-full flex items-center justify-between px-6 py-4 rounded-2xl transition-all border ${
-                            isClsOpen 
-                            ? "bg-white dark:bg-slate-800 border-indigo-200 dark:border-indigo-500/30 shadow-md" 
-                            : "bg-white dark:bg-slate-800/40 border-slate-200 dark:border-white/5"
-                          }`}
-                        >
-                          <span className="font-bold text-lg text-slate-900 dark:text-white">{cls.name} Archive</span>
-                          <ChevronDown className={`w-5 h-5 transition-transform duration-300 ${isClsOpen ? "rotate-180" : ""}`} />
-                        </button>
-                        
-                        <AnimatePresence>
-                          {isClsOpen && (
-                            <motion.div
-                              initial={{ height: 0, opacity: 0 }}
-                              animate={{ height: "auto", opacity: 1 }}
-                              exit={{ height: 0, opacity: 0 }}
-                              className="pl-4 space-y-3"
-                            >
-                              {cls.years.map((y: any) => (
-                                <YearSection 
-                                  key={y.year} 
-                                  yearData={y} 
-                                  isOpen={openYear === `jkbose-${cls.name}-${y.year}`}
-                                  onToggle={() => setOpenYear(openYear === `jkbose-${cls.name}-${y.year}` ? null : `jkbose-${cls.name}-${y.year}`)}
-                                  onViewPdf={openPdfViewer}
-                                />
-                              ))}
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
-                      </div>
-                    );
-                  })}
-                </motion.div>
-              )}
-            </AnimatePresence>
+              <AnimatePresence>
+                {openId === "jkbose" && mainCategory.classes && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    className="bg-slate-50 dark:bg-slate-900/50 p-6 md:p-8 space-y-6 overflow-hidden"
+                  >
+                    {mainCategory.classes.map((cls) => {
+                      const isClsOpen = openClass === cls.name;
+                      return (
+                        <div key={cls.name} className="space-y-4">
+                          <button
+                            onClick={() => setOpenClass(isClsOpen ? null : cls.name)}
+                            className={`w-full flex items-center justify-between px-6 py-4 rounded-2xl transition-all border ${
+                              isClsOpen 
+                              ? "bg-white dark:bg-slate-800 border-indigo-200 dark:border-indigo-500/30 shadow-md" 
+                              : "bg-white dark:bg-slate-800/40 border-slate-200 dark:border-white/5"
+                            }`}
+                          >
+                            <span className="font-bold text-lg text-slate-900 dark:text-white">{cls.name} Archive</span>
+                            <ChevronDown className={`w-5 h-5 transition-transform duration-300 ${isClsOpen ? "rotate-180" : ""}`} />
+                          </button>
+                          
+                          <AnimatePresence>
+                            {isClsOpen && (
+                              <motion.div
+                                initial={{ height: 0, opacity: 0 }}
+                                animate={{ height: "auto", opacity: 1 }}
+                                exit={{ height: 0, opacity: 0 }}
+                                className="pl-4 space-y-3 overflow-hidden"
+                              >
+                                {cls.years.map((y) => (
+                                  <YearSection 
+                                    key={y.year} 
+                                    yearData={y} 
+                                    isOpen={openYear === `jkbose-${cls.name}-${y.year}`}
+                                    onToggle={() => setOpenYear(openYear === `jkbose-${cls.name}-${y.year}` ? null : `jkbose-${cls.name}-${y.year}`)}
+                                    onViewPdf={openPdfViewer}
+                                  />
+                                ))}
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
+                        </div>
+                      );
+                    })}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Other Exams Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {otherCategories.map((cat: any) => (
+          {otherCategories.map((cat) => (
             <div key={cat.id} className="relative group">
               <button
                 onClick={(e) => {
@@ -474,9 +351,9 @@ export default function PYQPage() {
                     initial={{ height: 0, opacity: 0 }}
                     animate={{ height: "auto", opacity: 1 }}
                     exit={{ height: 0, opacity: 0 }}
-                    className="mt-4 p-6 bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-200 dark:border-white/10 flex flex-col gap-4 shadow-lg"
+                    className="mt-4 p-6 bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-200 dark:border-white/10 flex flex-col gap-4 shadow-lg overflow-hidden"
                   >
-                    {cat.years?.map((y: any) => (
+                    {cat.years?.map((y) => (
                       <YearSection 
                         key={y.year} 
                         yearData={y} 
@@ -485,6 +362,40 @@ export default function PYQPage() {
                         onViewPdf={openPdfViewer}
                       />
                     ))}
+                    {/* If this exam has classes instead of direct years */}
+                    {cat.classes?.map((cls) => {
+                      const isClsOpen = openClass === `${cat.id}-${cls.name}`;
+                      return (
+                        <div key={cls.name} className="space-y-3">
+                          <button
+                            onClick={() => setOpenClass(isClsOpen ? null : `${cat.id}-${cls.name}`)}
+                            className={`w-full flex items-center justify-between px-5 py-3.5 rounded-xl transition-all border ${
+                              isClsOpen
+                                ? "bg-white dark:bg-slate-800 border-indigo-200 dark:border-indigo-500/30 shadow-md"
+                                : "bg-white dark:bg-slate-800/40 border-slate-200 dark:border-white/5"
+                            }`}
+                          >
+                            <span className="font-bold text-slate-900 dark:text-white">{cls.name}</span>
+                            <ChevronDown className={`w-4 h-4 transition-transform ${isClsOpen ? "rotate-180" : ""}`} />
+                          </button>
+                          <AnimatePresence>
+                            {isClsOpen && (
+                              <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="pl-3 space-y-3 overflow-hidden">
+                                {cls.years.map((y) => (
+                                  <YearSection key={y.year} yearData={y} isOpen={openYear === `${cat.id}-${cls.name}-${y.year}`}
+                                    onToggle={() => setOpenYear(openYear === `${cat.id}-${cls.name}-${y.year}` ? null : `${cat.id}-${cls.name}-${y.year}`)}
+                                    onViewPdf={openPdfViewer} />
+                                ))}
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
+                        </div>
+                      );
+                    })}
+                    {/* No data state */}
+                    {!cat.years?.length && !cat.classes?.length && (
+                      <p className="text-center py-6 text-sm font-bold text-slate-400 uppercase tracking-widest">No papers available yet</p>
+                    )}
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -492,7 +403,14 @@ export default function PYQPage() {
           ))}
         </div>
 
-
+        {/* Empty state if no categories at all */}
+        {examData.length === 0 && (
+          <div className="text-center py-20 space-y-4">
+            <FileText className="w-16 h-16 mx-auto text-slate-300 dark:text-slate-700" />
+            <h3 className="text-xl font-black text-slate-500">No exams available yet</h3>
+            <p className="text-sm text-slate-400">Papers will appear here once added by the admin.</p>
+          </div>
+        )}
 
         {/* Footer Info */}
         <div className="mt-20 text-center text-slate-500 text-sm font-bold opacity-80">
@@ -515,7 +433,8 @@ export default function PYQPage() {
 }
 
 function YearSection({ yearData, isOpen, onToggle, onViewPdf }: any) {
-  const isLatest = yearData.year === 2026;
+  const currentYear = new Date().getFullYear();
+  const isLatest = yearData.year === currentYear;
   
   return (
     <div className="space-y-3">
@@ -560,12 +479,9 @@ function YearSection({ yearData, isOpen, onToggle, onViewPdf }: any) {
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1 pb-4"
+            className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1 pb-4 overflow-hidden"
           >
             {yearData.subjects.map((sub: any, idx: number) => {
-              const isLocal = sub.url && sub.url.startsWith('/');
-              const isComingSoon = !sub.url || sub.url.includes("undefined") || sub.url.endsWith("/") || (isLocal && !availablePyqs.includes(sub.url));
-              
               return (
                 <motion.button
                   key={idx}
@@ -573,39 +489,23 @@ function YearSection({ yearData, isOpen, onToggle, onViewPdf }: any) {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: idx * 0.05 }}
                   onClick={() => {
-                    if (isComingSoon) {
-                      toast.info(yearData.year === 2026 ? "This resource is coming soon!" : "This resource is not available currently.");
-                      return;
-                    }
                     onViewPdf(sub.url, sub.name);
                   }}
-                  className={`flex items-center justify-between p-4 rounded-2xl transition-all border group relative overflow-hidden text-left ${
-                    isComingSoon
-                    ? "bg-slate-100 dark:bg-white/5 border-slate-200 dark:border-white/5 opacity-60 cursor-not-allowed"
-                    : "bg-white dark:bg-slate-900 border-slate-200 dark:border-white/10 hover:border-indigo-400 dark:hover:border-indigo-500/50 hover:shadow-lg hover:-translate-y-0.5 text-slate-900 dark:text-white cursor-pointer"
-                  }`}
+                  className="flex items-center justify-between p-4 rounded-2xl transition-all border group relative overflow-hidden text-left bg-white dark:bg-slate-900 border-slate-200 dark:border-white/10 hover:border-indigo-400 dark:hover:border-indigo-500/50 hover:shadow-lg hover:-translate-y-0.5 text-slate-900 dark:text-white cursor-pointer"
                 >
                   <div className="flex items-center gap-4">
-                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${
-                      isComingSoon
-                      ? "bg-slate-200 dark:bg-white/5 text-slate-400"
-                      : "bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white"
-                    }`}>
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center transition-all bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white">
                       {sub.name.toLowerCase().includes('math') ? <Zap className="w-5 h-5" /> : <FileText className="w-5 h-5" />}
                     </div>
                     <div>
                       <p className="font-black text-sm">{sub.name}</p>
                       <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                        {isComingSoon ? (yearData.year === 2026 ? "Coming Soon" : "Not Available Currently") : "View Paper"}
+                        View Paper
                       </p>
                     </div>
                   </div>
                   
-                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all ${
-                    isComingSoon
-                    ? "text-slate-300"
-                    : "text-slate-300 group-hover:text-indigo-600 dark:group-hover:text-indigo-400"
-                  }`}>
+                  <div className="w-8 h-8 rounded-lg flex items-center justify-center transition-all text-slate-300 group-hover:text-indigo-600 dark:group-hover:text-indigo-400">
                     <Eye className="w-5 h-5" />
                   </div>
                 </motion.button>

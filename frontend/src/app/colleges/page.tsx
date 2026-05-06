@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import CollegeCard from "@/components/CollegeCard";
-import { Sparkles, Stethoscope, Laptop, Building2, Crown, Lock, X, Search, Filter, Loader2 } from "lucide-react";
+import { Sparkles, Stethoscope, Laptop, Building2, Search, Filter, Loader2 } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import api from "@/lib/api";
 
@@ -17,158 +17,26 @@ interface College {
   category?: string;
 }
 
-const hardcodedColleges: College[] = [
-  // MEDICAL (5)
-  {
-    _id: "gmc-sgr",
-    name: "Government Medical College (GMC), Srinagar",
-    image: "/images/gmcsgr.jpg",
-    location: "Srinagar, J&K",
-    description: "One of the oldest and most prestigious medical institutions in North India, dedicated to excellence in medical education and healthcare.",
-    websiteUrl: "https://www.gmcs.ac.in/",
-  },
-  {
-    _id: "gmc-jmu",
-    name: "Government Medical College (GMC), Jammu",
-    image: "/images/gmcjmu.png",
-    location: "Jammu, J&K",
-    description: "A leading medical college and hospital providing top-tier medical education and serving the Jammu region.",
-    websiteUrl: "http://gmcjammu.nic.in/",
-  },
-  {
-    _id: "skims",
-    name: "SKIMS Medical College, Bemina",
-    image: "/images/skims.jpg",
-    location: "Srinagar, J&K",
-    description: "A premier medical institution attached to the Sher-i-Kashmir Institute of Medical Sciences, offering UG and PG medical courses.",
-    websiteUrl: "https://skimsmc.edu.in/",
-  },
-  {
-    _id: "gmc-ant",
-    name: "Government Medical College (GMC), Anantnag",
-    image: "/images/gmcant.jpg",
-    location: "Anantnag, J&K",
-    description: "A rapidly growing medical college in South Kashmir, providing state-of-the-art medical training and patient care.",
-    websiteUrl: "https://gmcanantnag.net/",
-  },
-  {
-    _id: "aiims-jmu",
-    name: "AIIMS, Jammu",
-    image: "/images/aiimsjmu.jpg",
-    location: "Vijaypur, Jammu",
-    description: "A premier institute of national importance, bringing world-class healthcare and medical research to the region.",
-    websiteUrl: "https://www.aiimsjammu.edu.in/",
-  },
-
-  // ENGINEERING (5)
-  {
-    _id: "nit-sri",
-    name: "National Institute of Technology (NIT), Srinagar",
-    image: "/images/nitsri.jpg",
-    location: "Srinagar, J&K",
-    description: "A premier engineering institution located on the banks of Dal Lake, offering diverse engineering and technology programs.",
-    websiteUrl: "https://nitsri.ac.in/",
-  },
-  {
-    _id: "iit-jmu",
-    name: "Indian Institute of Technology (IIT), Jammu",
-    image: "/images/iitjmu.jpg",
-    location: "Jammu, J&K",
-    description: "A world-class engineering institute fostering innovation and research excellence in the heart of Jammu.",
-    websiteUrl: "https://iitjammu.ac.in/",
-  },
-  {
-    _id: "gcet-jmu",
-    name: "Government College of Engineering & Tech (GCET), Jammu",
-    image: "/images/gcetjmu.jpg",
-    location: "Jammu, J&K",
-    description: "The premier state-run engineering college in Jammu, offering undergraduate courses in several engineering disciplines.",
-    websiteUrl: "https://gcetjammu.org.in/",
-  },
-  {
-    _id: "miet-jmu",
-    name: "Model Institute of Engineering & Tech (MIET), Jammu",
-    image: "/images/miet.jpg",
-    location: "Jammu, J&K",
-    description: "The first private engineering college in J&K, known for its strong industry-academia links and placements.",
-    websiteUrl: "https://www.mietjmu.in/",
-  },
-  {
-    _id: "ssm-sgr",
-    name: "SSM College of Engineering, Pattan",
-    image: "/images/ssm.jpg",
-    location: "Baramulla, J&K",
-    description: "One of the oldest private engineering colleges in the valley, providing quality technical education.",
-    websiteUrl: "http://www.ssmcollege.com/",
-  },
-
-  // GENERAL (5)
-  {
-    _id: "uok",
-    name: "University of Kashmir",
-    image: "/images/uok.jpg",
-    location: "Srinagar, J&K",
-    description: "The primary university of the valley, known for its beautiful campus and wide range of academic departments.",
-    websiteUrl: "https://www.kashmiruniversity.net/",
-  },
-  {
-    _id: "uoj",
-    name: "University of Jammu",
-    image: "/images/uoj.jpg",
-    location: "Jammu, J&K",
-    description: "An 'A+' grade university offering diverse research and academic programs in the city of temples.",
-    websiteUrl: "https://www.jammuuniversity.ac.in/",
-  },
-  {
-    _id: "iust-awp",
-    name: "Islamic University of Science & Technology (IUST)",
-    image: "/images/iust.jpg",
-    location: "Awantipora, J&K",
-    description: "A unique technical university focused on bringing modern science and technology to the doorstep of students.",
-    websiteUrl: "https://www.iust.ac.in/",
-  },
-  {
-    _id: "islamia-sgr",
-    name: "Islamia College of Science & Commerce",
-    image: "/images/islamia.jpg",
-    location: "Srinagar, J&K",
-    description: "A heritage institution in the heart of Srinagar, offering specialized courses in science and management.",
-    websiteUrl: "https://islamiacollege.edu.in/",
-  },
-  {
-    _id: "sp-college",
-    name: "Sri Pratap (SP) College, Srinagar",
-    image: "/images/sp.jpg",
-    location: "Srinagar, J&K",
-    description: "The oldest science college in the valley, a constituent of the Cluster University Srinagar with a rich history.",
-    websiteUrl: "https://spcollege.edu.in/",
-  }
-];
-
 export default function CollegesPage() {
-  const [dynamicColleges, setDynamicColleges] = useState<College[]>([]);
+  const [colleges, setColleges] = useState<College[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [activeTab, setActiveTab] = useState("All");
 
-  const fetchColleges = async () => {
-    setLoading(true);
-    try {
-      const res = await api.get("/colleges");
-      setDynamicColleges(res.data.data || []);
-    } catch (err) {
-      console.error("Failed to fetch colleges", err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
+    const fetchColleges = async () => {
+      setLoading(true);
+      try {
+        const res = await api.get("/colleges");
+        setColleges(res.data.data || []);
+      } catch (err) {
+        console.error("Failed to fetch colleges", err);
+      } finally {
+        setLoading(false);
+      }
+    };
     fetchColleges();
   }, []);
-
-  // Merge hardcoded and dynamic colleges
-  const allColleges = [...hardcodedColleges, ...dynamicColleges.filter(dc => !hardcodedColleges.find(hc => hc._id === dc._id))];
 
   const TABS = [
     { name: "All",         icon: Building2,   color: "indigo" },
@@ -177,21 +45,14 @@ export default function CollegesPage() {
     { name: "General",     icon: GraduationCap, color: "purple" },
   ];
 
-  // Helper for dynamic categories (In real app, you'd save category in DB)
-  const getCategory = (name: string) => {
-    const n = name.toLowerCase();
-    if (n.includes("gmc") || n.includes("medical") || n.includes("skims") || n.includes("aiims")) return "Medical";
-    if (n.includes("iit") || n.includes("nit") || n.includes("engineering") || n.includes("technology") || n.includes("miet") || n.includes("gcet")) return "Engineering";
-    return "General";
-  };
-
-  const filtered = allColleges.filter(c => {
-    const matchesSearch = c.name.toLowerCase().includes(search.toLowerCase()) || 
-                          c.location.toLowerCase().includes(search.toLowerCase());
-    const cat = getCategory(c.name);
-    const matchesTab = activeTab === "All" || cat === activeTab;
-    return matchesSearch && matchesTab;
-  });
+  const filtered = useMemo(() => {
+    return colleges.filter(c => {
+      const matchesSearch = c.name.toLowerCase().includes(search.toLowerCase()) || 
+                            c.location.toLowerCase().includes(search.toLowerCase());
+      const matchesTab = activeTab === "All" || c.category === activeTab;
+      return matchesSearch && matchesTab;
+    });
+  }, [colleges, search, activeTab]);
 
   const handleCollegeClick = (url: string) => {
     window.location.href = url;
@@ -234,12 +95,12 @@ export default function CollegesPage() {
         <div className="mb-8 md:mb-12 space-y-6 md:space-y-8">
           <div className="flex flex-col lg:flex-row items-center justify-between gap-6">
             {/* Tabs */}
-            <div className="flex items-center p-1 md:p-1.5 bg-white dark:bg-slate-900 rounded-2xl md:rounded-[1.5rem] border border-slate-200 dark:border-white/10 shadow-sm overflow-x-auto w-full lg:w-auto no-scrollbar pb-1 md:pb-1.5">
+            <div className="flex items-center justify-start sm:justify-center p-1 md:p-1.5 bg-white dark:bg-slate-900 rounded-2xl md:rounded-[1.5rem] border border-slate-200 dark:border-white/10 shadow-sm overflow-x-auto w-full lg:w-auto scrollbar-hide pb-1 md:pb-1.5">
               {TABS.map((tab) => (
                 <button
                   key={tab.name}
                   onClick={() => setActiveTab(tab.name)}
-                  className={`flex items-center gap-2 px-4 py-2.5 md:px-6 md:py-3 rounded-xl md:rounded-2xl text-[10px] md:text-xs font-black uppercase tracking-widest transition-all whitespace-nowrap ${
+                  className={`flex items-center justify-center gap-2 px-4 py-2.5 md:px-6 md:py-3 rounded-xl md:rounded-2xl text-[10px] md:text-xs font-black uppercase tracking-widest transition-all whitespace-nowrap shrink-0 ${
                     activeTab === tab.name 
                     ? "bg-indigo-600 text-white shadow-lg shadow-indigo-500/30" 
                     : "text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800"

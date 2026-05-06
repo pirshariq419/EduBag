@@ -5,6 +5,7 @@ import { useAuthStore } from "@/store/authStore";
 import { toast } from "@/store/toastStore";
 import { formatDistanceToNow } from "date-fns";
 import { ThumbsUp, MessageSquare, Trash2, ChevronLeft, Send, Share2, BookmarkPlus } from "lucide-react";
+import { confirm } from "@/components/ConfirmDialog";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -36,7 +37,11 @@ export default function PostDetailPage({ params }: { params: Promise<{ id: strin
   }, [unwrappedParams.id]);
 
   const handleUpvote = async () => {
-    if (!user) return toast.warning("Log in to upvote");
+    if (!user) {
+      toast.warning("Log in to upvote");
+      router.push("/login");
+      return;
+    }
     try {
       await api.put(`/forum/posts/${post._id}/upvote`);
       setPost({
@@ -67,24 +72,26 @@ export default function PostDetailPage({ params }: { params: Promise<{ id: strin
   };
 
   const handleDeletePost = async () => {
-    if (!confirm("Are you sure you want to delete this post?")) return;
-    try {
-      await api.delete(`/forum/posts/${post._id}`);
-      router.push("/forum");
-    } catch {
-      toast.error("Failed to delete");
-    }
+    confirm("Are you sure you want to delete this post?", async () => {
+      try {
+        await api.delete(`/forum/posts/${post._id}`);
+        router.push("/forum");
+      } catch {
+        toast.error("Failed to delete");
+      }
+    }, "Delete Post");
   };
 
   const handleDeleteComment = async (commentId: string) => {
-    if (!confirm("Delete comment?")) return;
-    try {
-      await api.delete(`/forum/comments/${commentId}`);
-      setComments(comments.filter(c => c._id !== commentId));
-      setPost({ ...post, commentCount: post.commentCount - 1 });
-    } catch {
-      toast.error("Failed to delete comment");
-    }
+    confirm("Delete this comment?", async () => {
+      try {
+        await api.delete(`/forum/comments/${commentId}`);
+        setComments(comments.filter(c => c._id !== commentId));
+        setPost({ ...post, commentCount: post.commentCount - 1 });
+      } catch {
+        toast.error("Failed to delete comment");
+      }
+    }, "Delete Comment");
   };
 
   const handleShare = () => {

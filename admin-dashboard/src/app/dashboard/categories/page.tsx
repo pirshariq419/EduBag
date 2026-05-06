@@ -3,6 +3,9 @@ import { useEffect, useState } from "react";
 import api from "@/lib/api";
 import Topbar from "@/components/Topbar";
 import { Plus, Trash2, Search, X, Save, Loader2, Image as ImageIcon, Pencil } from "lucide-react";
+import { toast } from "@/store/toastStore";
+import { confirm } from "@/components/ConfirmDialog";
+import { resolveImageUrl } from "@/lib/imageUrl";
 
 interface Category {
   _id: string;
@@ -38,7 +41,7 @@ export default function CategoriesPage() {
       });
       setForm(p => ({ ...p, logo: res.data.data }));
     } catch (err: any) {
-      alert("Upload failed");
+      toast.error("Upload failed");
     } finally {
       setUploading(false);
     }
@@ -88,20 +91,21 @@ export default function CategoriesPage() {
       setForm({ ...defaultForm });
       fetchItems();
     } catch (err: any) {
-      alert(err?.response?.data?.error || "Operation failed");
+      toast.error(err?.response?.data?.error || "Operation failed");
     } finally {
       setSaving(false);
     }
   };
 
   const deleteItem = async (id: string) => {
-    if (!confirm("Are you sure? This will not delete resources under this category, but the category won't show on frontend.")) return;
-    try {
-      await api.delete(`/categories/${id}`);
-      fetchItems();
-    } catch (err) {
-      alert("Delete failed");
-    }
+    confirm("Are you sure? This will not delete resources under this category, but the category won't show on frontend.", async () => {
+      try {
+        await api.delete(`/categories/${id}`);
+        setItems((p) => p.filter((i) => i._id !== id));
+        toast.success("Category deleted");
+      } catch { toast.error("Delete failed"); }
+    }, "Delete Category");
+    return;
   };
 
   const filtered = items.filter(i => i.name.toLowerCase().includes(search.toLowerCase()));
@@ -144,7 +148,7 @@ export default function CategoriesPage() {
                 <div className="flex items-center gap-4 mb-4">
                   <div className="w-14 h-14 rounded-2xl bg-white/10 p-2 flex items-center justify-center overflow-hidden shrink-0">
                     <img
-                      src={item.logo}
+                      src={resolveImageUrl(item.logo)}
                       alt={item.name}
                       className="w-full h-full object-contain"
                       onError={(e) => { (e.target as HTMLImageElement).src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' fill='%236366f1' viewBox='0 0 24 24'%3E%3Cpath d='M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5'/%3E%3C/svg%3E"; }}
@@ -214,7 +218,7 @@ export default function CategoriesPage() {
                 <div className="flex items-center gap-4">
                   <div className="w-16 h-16 rounded-xl bg-white/10 p-2 flex items-center justify-center overflow-hidden shrink-0">
                     <img
-                      src={form.logo}
+                      src={resolveImageUrl(form.logo)}
                       alt="Preview"
                       className="w-full h-full object-contain"
                       onError={(e) => { (e.target as HTMLImageElement).src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' fill='%236366f1' viewBox='0 0 24 24'%3E%3Cpath d='M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5'/%3E%3C/svg%3E"; }}

@@ -7,6 +7,7 @@ import BottomNav from "@/components/BottomNav";
 import EduBot from "@/components/EduBot";
 import WakeUpPing from "@/components/WakeUpPing";
 import ToastContainer from "@/components/ToastContainer";
+import ConfirmDialog from "@/components/ConfirmDialog";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -37,6 +38,7 @@ export default function RootLayout({
       <body className={`${inter.className} min-h-screen bg-white dark:bg-black text-slate-900 dark:text-slate-100 flex flex-col`}>
         <WakeUpPing />
         <ToastContainer />
+        <ConfirmDialog />
         <Navbar />
         <main className="flex-grow pt-16 pb-20 md:pb-0">
           {children}

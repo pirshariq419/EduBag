@@ -3,6 +3,8 @@ import { useEffect, useState } from "react";
 import api from "@/lib/api";
 import Topbar from "@/components/Topbar";
 import { Plus, Trash2, Search, FileText, X, Save, Loader2, Pencil } from "lucide-react";
+import { toast } from "@/store/toastStore";
+import { confirm } from "@/components/ConfirmDialog";
 
 interface Resource {
   _id: string;
@@ -83,7 +85,7 @@ export default function PYQPage() {
       });
       setForm(p => ({ ...p, fileUrl: res.data.data }));
     } catch (err: any) {
-      alert(err?.response?.data?.error || "Upload failed");
+      toast.error(err?.response?.data?.error || "Upload failed");
     } finally {
       setUploading(false);
     }
@@ -109,7 +111,7 @@ export default function PYQPage() {
       closeModal();
       fetchItems();
     } catch (err: any) {
-      alert(err?.response?.data?.error || "Failed to save");
+      toast.error(err?.response?.data?.error || "Failed to save");
     } finally { setSaving(false); }
   };
 
@@ -141,11 +143,14 @@ export default function PYQPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Delete this PYQ entry?")) return;
-    try {
-      await api.delete(`/resources/${id}`);
-      setItems((p) => p.filter((i) => i._id !== id));
-    } catch { alert("Failed to delete"); }
+    confirm("Are you sure you want to delete this PYQ entry?", async () => {
+      try {
+        await api.delete(`/resources/${id}`);
+        setItems((p) => p.filter((i) => i._id !== id));
+        toast.success("PYQ entry deleted");
+      } catch { toast.error("Failed to delete"); }
+    }, "Delete PYQ");
+    return;
   };
 
   // Helper: get category display name from slug

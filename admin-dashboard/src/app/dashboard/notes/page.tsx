@@ -3,6 +3,8 @@ import { useEffect, useState } from "react";
 import api from "@/lib/api";
 import Topbar from "@/components/Topbar";
 import { Plus, Trash2, Search, Crown, BookOpen, X, Save, Loader2, Edit, FileText } from "lucide-react";
+import { toast } from "@/store/toastStore";
+import { confirm } from "@/components/ConfirmDialog";
 
 interface Note {
   _id: string;
@@ -47,16 +49,18 @@ export default function NotesPage() {
       await api.post("/notes", form);
       setForm({ title: "", subject: "Physics", chapter: "", exam: "JEE", description: "", fileUrl: "" });
     } catch (err: any) {
-      alert(err?.response?.data?.error || "Failed to save note");
+      toast.error(err?.response?.data?.error || "Failed to save note");
     } finally { setSaving(false); }
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Delete this note?")) return;
-    try {
-      await api.delete(`/notes/${id}`);
-      setItems((p) => p.filter((i) => i._id !== id));
-    } catch { alert("Failed to delete"); }
+    confirm("Are you sure you want to delete this note?", async () => {
+      try {
+        await api.delete(`/notes/${id}`);
+        setItems((p) => p.filter((i) => i._id !== id));
+        toast.success("Note deleted");
+      } catch { toast.error("Failed to delete"); }
+    }, "Delete Note");
   };
 
   const filtered = items.filter((i) =>

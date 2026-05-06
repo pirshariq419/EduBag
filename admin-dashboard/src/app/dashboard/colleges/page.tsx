@@ -3,6 +3,9 @@ import { useEffect, useState } from "react";
 import api from "@/lib/api";
 import Topbar from "@/components/Topbar";
 import { Plus, Trash2, Search, Building2, X, Save, Loader2, Globe, MapPin, Pencil, Image as ImageIcon } from "lucide-react";
+import { toast } from "@/store/toastStore";
+import { confirm } from "@/components/ConfirmDialog";
+import { resolveImageUrl } from "@/lib/imageUrl";
 
 interface College {
   _id: string;
@@ -11,6 +14,7 @@ interface College {
   image?: string;
   websiteUrl?: string;
   description?: string;
+  category?: string;
   createdAt: string;
 }
 
@@ -23,7 +27,7 @@ export default function CollegesPage() {
   const [uploading, setUploading] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState({
-    name: "", location: "J&K, India", image: "", websiteUrl: "", description: "",
+    name: "", location: "J&K, India", image: "", websiteUrl: "", description: "", category: "General",
   });
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -41,7 +45,7 @@ export default function CollegesPage() {
       });
       setForm(p => ({ ...p, image: res.data.data }));
     } catch (err: any) {
-      alert(err?.response?.data?.error || "Upload failed");
+      toast.error(err?.response?.data?.error || "Upload failed");
     } finally {
       setUploading(false);
     }
@@ -69,10 +73,10 @@ export default function CollegesPage() {
       }
       setShowModal(false);
       setEditingId(null);
-      setForm({ name: "", location: "J&K, India", image: "", websiteUrl: "", description: "" });
+      setForm({ name: "", location: "J&K, India", image: "", websiteUrl: "", description: "", category: "General" });
       fetchItems();
     } catch (err: any) {
-      alert(err?.response?.data?.error || "Failed to save");
+      toast.error(err?.response?.data?.error || "Failed to save");
     } finally { setSaving(false); }
   };
 
@@ -84,16 +88,20 @@ export default function CollegesPage() {
       image: item.image || "",
       websiteUrl: item.websiteUrl || "",
       description: item.description || "",
+      category: item.category || "General",
     });
     setShowModal(true);
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Delete this college entry?")) return;
-    try {
-      await api.delete(`/colleges/${id}`);
-      setItems((p) => p.filter((i) => i._id !== id));
-    } catch { alert("Failed to delete"); }
+    confirm("Are you sure you want to delete this college?", async () => {
+      try {
+        await api.delete(`/colleges/${id}`);
+        setItems((p) => p.filter((i) => i._id !== id));
+        toast.success("College deleted successfully");
+      } catch { toast.error("Failed to delete"); }
+    }, "Delete College");
+    return;
   };
 
   const filtered = items.filter((i) =>
@@ -119,7 +127,7 @@ export default function CollegesPage() {
               className="input pl-11 w-full md:w-72"
             />
           </div>
-          <button onClick={() => { setEditingId(null); setForm({ name: "", location: "J&K, India", image: "", websiteUrl: "", description: "" }); setShowModal(true); }} className="btn-primary flex items-center gap-2">
+          <button onClick={() => { setEditingId(null); setForm({ name: "", location: "J&K, India", image: "", websiteUrl: "", description: "", category: "General" }); setShowModal(true); }} className="btn-primary flex items-center gap-2">
             <Plus className="w-4 h-4" /> Add College
           </button>
         </div>
@@ -145,9 +153,10 @@ export default function CollegesPage() {
                     <td className="px-5 py-4">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-lg overflow-hidden bg-slate-800 shrink-0 border border-white/5">
-                          {item.image ? <img src={item.image} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-slate-500"><Building2 className="w-5 h-5" /></div>}
+                          {item.image ? <img src={resolveImageUrl(item.image)} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-slate-500"><Building2 className="w-5 h-5" /></div>}
                         </div>
                         <span className="font-semibold text-slate-200">{item.name}</span>
+                        {item.category && <span className="ml-2 px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-widest" style={{ background: item.category === 'Medical' ? 'rgba(20,184,166,0.15)' : item.category === 'Engineering' ? 'rgba(59,130,246,0.15)' : 'rgba(139,92,246,0.15)', color: item.category === 'Medical' ? '#14b8a6' : item.category === 'Engineering' ? '#3b82f6' : '#8b5cf6' }}>{item.category}</span>}
                       </div>
                     </td>
                     <td className="px-5 py-4 text-slate-400">
@@ -216,11 +225,21 @@ export default function CollegesPage() {
               </div>
 
               <div className="space-y-1.5">
+                <label className="text-xs font-black uppercase tracking-widest" style={{ color: "#475569" }}>Category</label>
+                <select value={form.category} onChange={(e) => f("category", e.target.value)} className="input">
+                  <option value="Medical">Medical</option>
+                  <option value="Engineering">Engineering</option>
+                  <option value="General">General</option>
+                </select>
+                <p className="text-[10px] text-slate-500">Used for tab filtering on the frontend</p>
+              </div>
+
+              <div className="space-y-1.5">
                 <label className="text-xs font-black uppercase tracking-widest" style={{ color: "#475569" }}>College Image</label>
                 <div className="flex items-start gap-4">
                   <div className="w-24 h-24 rounded-2xl bg-slate-800 border border-white/5 overflow-hidden shrink-0">
                     {form.image ? (
-                      <img src={form.image} alt="Preview" className="w-full h-full object-cover" />
+                      <img src={resolveImageUrl(form.image)} alt="Preview" className="w-full h-full object-cover" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-slate-500">
                         <ImageIcon className="w-8 h-8" />

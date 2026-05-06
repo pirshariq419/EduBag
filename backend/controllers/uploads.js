@@ -1,23 +1,33 @@
+const cloudinary = require('cloudinary').v2;
+const { CloudinaryStorage } = require('multer-storage-cloudinary-v2');
 const multer = require('multer');
-const fs = require('fs');
-const path = require('path');
+const dotenv = require('dotenv');
 
-// Ensure uploads directory exists
-const uploadDir = path.join(__dirname, '..', 'uploads');
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
-}
+dotenv.config();
 
-// Setup Disk Storage for Multer
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, uploadDir);
+// Configure Cloudinary
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET
+});
+
+// Setup Cloudinary Storage for Multer
+const storage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: async (req, file) => {
+    const isPdf = file.mimetype === 'application/pdf';
+    
+    return {
+      folder: 'edubag_uploads',
+      // We use 'image' for PDFs because Cloudinary provides better 
+      // CORS headers and PDF features when handled as an image resource.
+      resource_type: isPdf ? 'image' : 'auto', 
+      public_id: Date.now() + '-' + file.originalname.replace(/\s+/g, '-').replace(/\.[^/.]+$/, ""),
+      // Force PDF format to ensure the URL ends in .pdf
+      format: isPdf ? 'pdf' : undefined,
+    };
   },
-  filename: function (req, file, cb) {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    const cleanName = file.originalname.replace(/\s+/g, '-');
-    cb(null, uniqueSuffix + '-' + cleanName);
-  }
 });
 
 const upload = multer({ 
@@ -38,10 +48,8 @@ exports.uploadFile = (req, res) => {
     return res.status(400).json({ success: false, error: 'Please upload a file' });
   }
 
-  // Construct local URL. 
-  // In development: http://localhost:5000/uploads/...
-  // In production: https://your-render-url.com/uploads/...
-  const fileUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
+  // Use secure_url to prevent mixed-content blocks in browsers
+  const fileUrl = req.file.secure_url || req.file.path;
 
   res.status(200).json({
     success: true,

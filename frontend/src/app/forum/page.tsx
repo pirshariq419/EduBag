@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import api from "@/lib/api";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
 import { toast } from "@/store/toastStore";
 import {
@@ -26,6 +27,7 @@ export default function ForumHubPage() {
   const [saving, setSaving] = useState(false);
 
   const { user } = useAuthStore();
+  const router = useRouter();
 
   const fetchPosts = async () => {
     setLoading(true);
@@ -68,7 +70,11 @@ export default function ForumHubPage() {
   };
 
   const handleUpvote = async (postId: string) => {
-    if (!user) return toast.warning("Please log in to upvote.");
+    if (!user) {
+      toast.warning("Please log in to upvote.");
+      router.push("/login");
+      return;
+    }
     try {
       await api.put(`/forum/posts/${postId}/upvote`);
       setPosts(posts.map(p => {
@@ -115,7 +121,11 @@ export default function ForumHubPage() {
             </div>
             <button
               onClick={() => {
-                if (!user) return toast.warning("Please log in to ask a question.");
+                if (!user) {
+                  toast.warning("Please log in to ask a question.");
+                  router.push("/login");
+                  return;
+                }
                 setShowModal(true);
               }}
               className="px-6 py-3.5 bg-gradient-to-r from-[#a435f0] to-[#6d28d9] text-white rounded-2xl font-bold shadow-lg shadow-purple-500/20 hover:shadow-xl hover:shadow-purple-500/30 hover:scale-[1.02] transition-all flex items-center gap-2"
@@ -235,7 +245,11 @@ export default function ForumHubPage() {
               <p className="text-slate-500 mb-6">Be the first to start a conversation!</p>
               <button
                 onClick={() => {
-                  if (!user) return toast.warning("Please log in to ask a question.");
+                  if (!user) {
+                    toast.warning("Please log in to ask a question.");
+                    router.push("/login");
+                    return;
+                  }
                   setShowModal(true);
                 }}
                 className="px-6 py-3 bg-[#a435f0] text-white rounded-xl font-bold hover:bg-[#8e2dd0] transition-all"

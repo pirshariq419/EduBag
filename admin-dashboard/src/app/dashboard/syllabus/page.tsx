@@ -3,6 +3,8 @@ import { useEffect, useState } from "react";
 import api from "@/lib/api";
 import Topbar from "@/components/Topbar";
 import { Plus, Trash2, Search, BookOpen, X, Save, Loader2, FileText, Pencil } from "lucide-react";
+import { toast } from "@/store/toastStore";
+import { confirm } from "@/components/ConfirmDialog";
 
 interface Resource {
   _id: string;
@@ -74,7 +76,7 @@ export default function SyllabusPage() {
       });
       setForm(p => ({ ...p, fileUrl: res.data.data }));
     } catch (err: any) {
-      alert(err?.response?.data?.error || "Upload failed");
+      toast.error(err?.response?.data?.error || "Upload failed");
     } finally {
       setUploading(false);
     }
@@ -92,7 +94,7 @@ export default function SyllabusPage() {
       closeModal();
       fetchItems();
     } catch (err: any) {
-      alert(err?.response?.data?.error || "Failed to save");
+      toast.error(err?.response?.data?.error || "Failed to save");
     } finally { setSaving(false); }
   };
 
@@ -122,11 +124,14 @@ export default function SyllabusPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Delete this syllabus entry?")) return;
-    try {
-      await api.delete(`/resources/${id}`);
-      setItems((p) => p.filter((i) => i._id !== id));
-    } catch { alert("Failed to delete"); }
+    confirm("Are you sure you want to delete this syllabus entry?", async () => {
+      try {
+        await api.delete(`/resources/${id}`);
+        setItems((p) => p.filter((i) => i._id !== id));
+        toast.success("Syllabus entry deleted");
+      } catch { toast.error("Failed to delete"); }
+    }, "Delete Syllabus");
+    return;
   };
 
   const getCatName = (slug: string) => {

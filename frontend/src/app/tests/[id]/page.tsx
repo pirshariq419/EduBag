@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "@/store/toastStore";
 import { Clock, CheckCircle2, XCircle, AlertCircle, Play, FileText, ChevronLeft, ChevronRight, BarChart3 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { confirm } from "@/components/ConfirmDialog";
 
 interface Question {
   _id: string;
@@ -225,7 +226,7 @@ export default function TestTakingPage({ params }: { params: Promise<{ id: strin
                 <div className="flex items-center gap-3"><div className="w-4 h-4 rounded-md bg-slate-100 border border-slate-200" /> Not Answered ({answers.filter(a => a === -1).length})</div>
               </div>
               <button onClick={() => {
-                if(confirm("Are you sure you want to submit the test?")) handleSubmitTest();
+                confirm("Are you sure you want to submit the test?", () => handleSubmitTest(), "Submit Test");
               }} className="w-full py-4 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-black flex items-center justify-center gap-2 hover:scale-[1.02] transition-transform shadow-lg shadow-slate-200 dark:shadow-none">
                 Submit Test
               </button>

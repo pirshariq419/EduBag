@@ -15,17 +15,18 @@ import {
 
 interface RecentResult {
   _id: string;
-  test: { title: string };
+  test: { title: string; exam?: string; subject?: string };
   score: number;
   totalQuestions: number;
   correctAnswers: number;
-  createdAt: string;
+  completedAt: string;
 }
 
 export default function DashboardPage() {
   const { user, loadUser, logout } = useAuthStore();
   const router = useRouter();
-  const [stats, setStats] = useState({ totalPYQs: 0, totalSyllabus: 0, avgScore: 0 });
+  const [stats, setStats] = useState({ testsTaken: 0, highestScore: 0, avgScore: 0 });
+  const [recentResults, setRecentResults] = useState<RecentResult[]>([]);
 
   useEffect(() => {
     const init = async () => {
@@ -36,13 +37,27 @@ export default function DashboardPage() {
         return;
       }
       try {
-        const pyqRes = await api.get("/resources?type=pyq");
-        const sylRes = await api.get("/resources?type=syllabus");
-        setStats({
-          totalPYQs: pyqRes.data.count || 0,
-          totalSyllabus: sylRes.data.count || 0,
-          avgScore: 0
-        });
+        const res = await api.get("/tests/my-results");
+        const results: RecentResult[] = res.data.data || [];
+        setRecentResults(results.slice(0, 3));
+
+        if (results.length > 0) {
+          const testsTaken = results.length;
+          let highestScore = 0;
+          let totalScorePercentage = 0;
+
+          results.forEach((r) => {
+            const percentage = Math.round((r.score / r.totalQuestions) * 100) || 0;
+            if (percentage > highestScore) highestScore = percentage;
+            totalScorePercentage += percentage;
+          });
+
+          setStats({
+            testsTaken,
+            highestScore,
+            avgScore: Math.round(totalScorePercentage / testsTaken)
+          });
+        }
       } catch { /* ignore */ }
     };
     init();
@@ -131,21 +146,21 @@ export default function DashboardPage() {
                   <Target className="w-7 h-7" />
                 </div>
                 <div className="text-right">
-                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1">Learning Progress</p>
-                  <p className="text-3xl font-black text-slate-900 dark:text-white">74% <span className="text-lg text-slate-400 font-bold">Complete</span></p>
+                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1">Avg Test Score</p>
+                  <p className="text-3xl font-black text-slate-900 dark:text-white">{stats.avgScore}% <span className="text-lg text-slate-400 font-bold">Accuracy</span></p>
                 </div>
               </div>
               <div className="h-4 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden shadow-inner">
                 <motion.div 
                   initial={{ width: 0 }}
-                  animate={{ width: "74%" }}
+                  animate={{ width: `${stats.avgScore}%` }}
                   transition={{ duration: 1, delay: 0.5 }}
                   className="h-full bg-gradient-to-r from-indigo-500 to-purple-600 rounded-full"
                 />
               </div>
               <p className="text-xs text-slate-500 dark:text-slate-400 font-bold leading-relaxed">
                 <span className="uppercase tracking-widest mr-2 text-[10px] text-indigo-500">Next Goal:</span>
-                Finish NEET 2024 Biology PYQ
+                Improve average to {Math.min(100, stats.avgScore + 10)}%
               </p>
             </div>
           </motion.div>
@@ -159,8 +174,8 @@ export default function DashboardPage() {
              <div className="w-14 h-14 rounded-2xl bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center text-emerald-600 dark:text-emerald-400 mb-2 border border-emerald-100 dark:border-emerald-500/20">
                <TrendingUp className="w-7 h-7" />
              </div>
-             <p className="text-4xl font-black tracking-tighter text-slate-900 dark:text-white">{stats.totalPYQs}</p>
-             <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">PYQs Explored</p>
+             <p className="text-4xl font-black tracking-tighter text-slate-900 dark:text-white">{stats.testsTaken}</p>
+             <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Mock Tests Taken</p>
           </motion.div>
 
           <motion.div 
@@ -172,8 +187,8 @@ export default function DashboardPage() {
              <div className="w-14 h-14 rounded-2xl bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center text-blue-600 dark:text-blue-400 mb-2 border border-blue-100 dark:border-blue-500/20">
                <BookOpen className="w-7 h-7" />
              </div>
-             <p className="text-4xl font-black tracking-tighter text-slate-900 dark:text-white">{stats.totalSyllabus}</p>
-             <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Syllabus Guides</p>
+             <p className="text-4xl font-black tracking-tighter text-slate-900 dark:text-white">{stats.highestScore}%</p>
+             <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Highest Score</p>
           </motion.div>
         </div>
 
@@ -208,17 +223,33 @@ export default function DashboardPage() {
 
           <div className="space-y-8">
             <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-3">
-               <Clock className="w-6 h-6 text-purple-500" /> Featured PYQs
+               <Clock className="w-6 h-6 text-purple-500" /> Recent Tests
             </h2>
             <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-200 dark:border-white/10 p-6 shadow-sm flex flex-col">
-               <div className="py-12 text-center flex flex-col items-center justify-center flex-grow">
-                  <div className="w-16 h-16 bg-slate-50 dark:bg-slate-800 rounded-2xl flex items-center justify-center mb-4 text-slate-400">
-                    <BarChart3 className="w-8 h-8" />
+               {recentResults.length > 0 ? (
+                 <div className="space-y-4 flex-grow">
+                   {recentResults.map((result) => (
+                     <div key={result._id} className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-white/5">
+                       <div>
+                         <p className="font-bold text-slate-900 dark:text-white text-sm line-clamp-1">{result.test?.title || "Mock Test"}</p>
+                         <p className="text-[10px] text-slate-500 mt-1 uppercase tracking-widest">{new Date(result.completedAt).toLocaleDateString()}</p>
+                       </div>
+                       <div className="px-3 py-1 bg-indigo-100 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 rounded-full font-black text-xs">
+                         {Math.round((result.score / result.totalQuestions) * 100) || 0}%
+                       </div>
+                     </div>
+                   ))}
+                 </div>
+               ) : (
+                 <div className="py-12 text-center flex flex-col items-center justify-center flex-grow">
+                    <div className="w-16 h-16 bg-slate-50 dark:bg-slate-800 rounded-2xl flex items-center justify-center mb-4 text-slate-400">
+                      <BarChart3 className="w-8 h-8" />
+                    </div>
+                    <p className="text-sm font-bold text-slate-500">No tests taken yet</p>
                   </div>
-                  <p className="text-sm font-bold text-slate-500">Coming Soon</p>
-                </div>
-              <Link href="/pyq" className="block w-full py-4 mt-4 text-center text-sm font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors border-t border-slate-100 dark:border-white/5">
-                Browse All Papers
+               )}
+              <Link href="/tests" className="block w-full py-4 mt-4 text-center text-sm font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors border-t border-slate-100 dark:border-white/5">
+                Take a Mock Test
               </Link>
             </div>
 

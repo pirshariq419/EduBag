@@ -6,30 +6,54 @@ import { motion } from "framer-motion";
 import { 
   BookOpen, FileText, GraduationCap, 
   ArrowRight, Sparkles, Zap, Crown, ShieldCheck, 
-  Star, Search, ChevronRight, Library, Target, Award
+  Star, Search, ChevronRight, Library, Target, Award,
+  Bot, BarChart3, MessageSquare
 } from "lucide-react";
 
 const features = [
   {
-    title: "Official Syllabus",
-    desc: "Complete up-to-date exam guides for NEET, JEE, and Board Exams.",
-    icon: Library,
-    color: "from-blue-600 to-indigo-600",
-    href: "/syllabus",
+    title: "AI Mock Tests",
+    desc: "Generate smart mock tests instantly and track your accuracy with detailed performance analytics.",
+    icon: BarChart3,
+    color: "from-indigo-600 to-purple-600",
+    href: "/tests",
+    badge: "AI Powered"
   },
   {
-    title: "PYQ Repository",
-    desc: "A massive archive of Previous Year Papers from 2013 to 2026.",
+    title: "EduBot AI Tutor",
+    desc: "Your 24/7 personal academic assistant. Get complex concepts explained instantly.",
+    icon: Bot,
+    color: "from-purple-600 to-pink-600",
+    href: "/learn",
+    badge: "New"
+  },
+  {
+    title: "Community Forum",
+    desc: "Ask doubts, share tips, and solve problems together with students across J&K.",
+    icon: MessageSquare,
+    color: "from-blue-600 to-cyan-600",
+    href: "/forum",
+  },
+  {
+    title: "PYQ Archive",
+    desc: "Download complete Previous Year Papers from 2013-2026. 100% Free.",
     icon: FileText,
-    color: "from-indigo-600 to-purple-600",
+    color: "from-emerald-600 to-teal-600",
     href: "/pyq",
   },
   {
-    title: "Study Hub",
-    desc: "Curated learning paths, video lectures, and academic notes.",
-    icon: BookOpen,
-    color: "from-purple-600 to-pink-600",
-    href: "/learn",
+    title: "College Explorer",
+    desc: "Navigate J&K college cutoffs, courses, and placement statistics easily.",
+    icon: GraduationCap,
+    color: "from-amber-500 to-orange-600",
+    href: "/colleges",
+  },
+  {
+    title: "Official Syllabus",
+    desc: "Up-to-date, verified exam guides for JKBOSE, NEET, JEE, and more.",
+    icon: Library,
+    color: "from-rose-500 to-red-600",
+    href: "/syllabus",
   },
 ];
 
@@ -51,30 +75,30 @@ export default function Home() {
             transition={{ duration: 0.8 }}
             className="space-y-8 text-center lg:text-left"
           >
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-100 dark:border-indigo-500/20 text-indigo-600 dark:text-indigo-400 text-xs font-black uppercase tracking-widest">
-              <Sparkles className="w-3 h-3" /> The Ultimate Academic Resource
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-100 dark:border-indigo-500/20 text-indigo-600 dark:text-indigo-400 text-xs font-black uppercase tracking-widest shadow-sm">
+              <Sparkles className="w-3 h-3" /> Next-Gen Learning Platform
             </div>
             
             <h1 className="text-5xl md:text-7xl font-black tracking-tight leading-[1.1]">
-              Empowering <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-400 dark:to-purple-400">J&K Students</span> to Excel.
+              The Ultimate Hub for <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-400 dark:to-purple-400">J&K Students.</span>
             </h1>
             
             <p className="text-slate-600 dark:text-slate-400 text-lg md:text-xl font-medium leading-relaxed max-w-2xl mx-auto lg:mx-0">
-              Access the most comprehensive collection of Previous Year Papers, official syllabi, and curated study materials designed specifically for regional success.
+              Access 100% free PYQs, explore college cutoffs, discuss with peers, and evaluate your preparation using our state-of-the-art AI Mock Test Engine.
             </p>
 
             <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4">
               <Link 
-                href="/learn"
-                className="w-full sm:w-auto flex items-center justify-center gap-3 bg-slate-900 dark:bg-white text-white dark:text-slate-900 px-10 py-5 rounded-2xl font-black uppercase text-[11px] tracking-widest hover:scale-105 transition-all shadow-xl shadow-black/10"
+                href="/signup"
+                className="w-full sm:w-auto flex items-center justify-center gap-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-10 py-5 rounded-2xl font-black uppercase text-[11px] tracking-widest hover:scale-105 transition-all shadow-xl shadow-indigo-500/20"
               >
-                Start Learning Now <ArrowRight className="w-4 h-4" />
+                Create Free Account <ArrowRight className="w-4 h-4" />
               </Link>
               <Link 
                 href="/pyq"
-                className="w-full sm:w-auto flex items-center justify-center gap-3 bg-white dark:bg-slate-900 text-slate-900 dark:text-white border border-slate-200 dark:border-white/10 px-10 py-5 rounded-2xl font-black uppercase text-[11px] tracking-widest hover:bg-slate-50 dark:hover:bg-slate-800 transition-all"
+                className="w-full sm:w-auto flex items-center justify-center gap-3 bg-white dark:bg-slate-900 text-slate-900 dark:text-white border border-slate-200 dark:border-white/10 px-10 py-5 rounded-2xl font-black uppercase text-[11px] tracking-widest hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-sm"
               >
-                Browse PYQ Bank
+                Browse Free PYQs
               </Link>
             </div>
 
@@ -105,8 +129,8 @@ export default function Home() {
                     <p className="text-xl font-black">Instant Access</p>
                   </div>
                   <div className="bg-white/5 border border-white/10 rounded-3xl p-6 flex flex-col justify-end -translate-y-6 group-hover:-translate-y-8 transition-transform duration-500">
-                    <Award className="w-10 h-10 text-emerald-400 mb-4" />
-                    <p className="text-xl font-black">Top Ratings</p>
+                    <Bot className="w-10 h-10 text-emerald-400 mb-4" />
+                    <p className="text-xl font-black">AI Assistance</p>
                   </div>
                   <div className="bg-white/5 border border-white/10 rounded-3xl p-6 flex flex-col justify-end translate-y-6 group-hover:translate-y-4 transition-transform duration-500">
                     <ShieldCheck className="w-10 h-10 text-blue-400 mb-4" />
@@ -121,87 +145,96 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Trust Bar (New refined style) */}
-      <div className="w-full border-y border-slate-100 dark:border-white/5 py-16">
+      {/* Trust Bar (Updated Stats) */}
+      <div className="w-full border-y border-slate-100 dark:border-white/5 py-16 bg-slate-50 dark:bg-slate-900/20">
         <div className="max-w-7xl mx-auto px-6 grid grid-cols-2 md:grid-cols-4 gap-12 text-center">
           <div className="space-y-1">
-            <p className="text-3xl font-black">10K+</p>
+            <p className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-slate-900 to-slate-600 dark:from-white dark:to-slate-400">10K+</p>
             <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Active Learners</p>
           </div>
           <div className="space-y-1">
-            <p className="text-3xl font-black">500+</p>
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Verified Papers</p>
+            <p className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-slate-900 to-slate-600 dark:from-white dark:to-slate-400">50K+</p>
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">AI Questions Gen.</p>
           </div>
           <div className="space-y-1">
-            <p className="text-3xl font-black">50+</p>
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Expert Guides</p>
+            <p className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-slate-900 to-slate-600 dark:from-white dark:to-slate-400">500+</p>
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Forum Discussions</p>
           </div>
           <div className="space-y-1">
-            <p className="text-3xl font-black">100%</p>
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Curriculum Sync</p>
+            <p className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-slate-900 to-slate-600 dark:from-white dark:to-slate-400">100%</p>
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-500">Free Core Access</p>
           </div>
         </div>
       </div>
 
-      {/* Value Proposition Cards */}
+      {/* 6-Pillar Bento Grid */}
       <section className="max-w-7xl mx-auto px-6 py-32 space-y-20">
         <div className="text-center space-y-4 max-w-3xl mx-auto">
-          <h2 className="text-4xl font-black tracking-tight">Structured For Success</h2>
+          <h2 className="text-4xl md:text-5xl font-black tracking-tight">An Ecosystem For Success</h2>
           <p className="text-slate-600 dark:text-slate-400 font-medium text-lg leading-relaxed">
-            We provide the tools. You provide the effort. Together, we build your future in Jammu and Kashmir.
+            Everything you need to ace your exams, organize your study routine, and secure admission into your dream college.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {features.map((feature, idx) => (
-            <motion.div
+            <Link 
+              href={feature.href}
               key={feature.title}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ delay: idx * 0.1 }}
-              viewport={{ once: true }}
-              className="group bg-slate-50 dark:bg-white/[0.03] border border-slate-100 dark:border-white/5 rounded-[2.5rem] p-10 hover:bg-white dark:hover:bg-white/[0.06] transition-all hover:shadow-2xl hover:-translate-y-2"
             >
-              <div className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${feature.color} flex items-center justify-center text-white mb-8 shadow-lg group-hover:rotate-6 transition-transform`}>
-                <feature.icon className="w-7 h-7" />
-              </div>
-              <h3 className="text-2xl font-black mb-4">{feature.title}</h3>
-              <p className="text-slate-600 dark:text-slate-400 font-medium text-sm leading-relaxed mb-8">
-                {feature.desc}
-              </p>
-              <Link href={feature.href} className="inline-flex items-center gap-2 text-indigo-600 dark:text-indigo-400 font-black uppercase text-[11px] tracking-widest hover:gap-4 transition-all">
-                Explore Now <ArrowRight className="w-4 h-4" />
-              </Link>
-            </motion.div>
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ delay: idx * 0.1 }}
+                viewport={{ once: true }}
+                className="group relative h-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-[2.5rem] p-10 hover:border-indigo-300 dark:hover:border-indigo-500/30 transition-all hover:shadow-2xl hover:shadow-indigo-500/5 hover:-translate-y-2 flex flex-col"
+              >
+                {feature.badge && (
+                  <div className="absolute top-8 right-8 px-3 py-1 rounded-full bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 text-[10px] font-black uppercase tracking-widest border border-indigo-100 dark:border-indigo-500/20">
+                    {feature.badge}
+                  </div>
+                )}
+                <div className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${feature.color} flex items-center justify-center text-white mb-8 shadow-lg group-hover:rotate-6 group-hover:scale-110 transition-transform`}>
+                  <feature.icon className="w-7 h-7" />
+                </div>
+                <h3 className="text-2xl font-black mb-3 text-slate-900 dark:text-white">{feature.title}</h3>
+                <p className="text-slate-600 dark:text-slate-400 font-medium text-sm leading-relaxed mb-8 flex-grow">
+                  {feature.desc}
+                </p>
+                <div className="inline-flex items-center gap-2 text-indigo-600 dark:text-indigo-400 font-black uppercase text-[11px] tracking-widest group-hover:gap-4 transition-all">
+                  Explore <ArrowRight className="w-4 h-4" />
+                </div>
+              </motion.div>
+            </Link>
           ))}
         </div>
       </section>
 
-      {/* Professional Call to Action (Soft approach) */}
-      <section className="max-w-7xl mx-auto px-6 py-20">
+      {/* Professional Call to Action */}
+      <section className="max-w-7xl mx-auto px-6 py-10 mb-20">
         <div className="bg-slate-900 rounded-[3.5rem] p-12 md:p-24 text-center text-white relative overflow-hidden shadow-2xl">
-          <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-500/10 rounded-full blur-[100px]" />
-          <div className="absolute bottom-0 left-0 w-96 h-96 bg-purple-500/10 rounded-full blur-[100px]" />
+          <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-500/20 rounded-full blur-[100px]" />
+          <div className="absolute bottom-0 left-0 w-96 h-96 bg-purple-500/20 rounded-full blur-[100px]" />
           
           <div className="relative z-10 max-w-3xl mx-auto space-y-10">
             <div className="space-y-4">
-              <h2 className="text-4xl md:text-5xl font-black tracking-tight leading-tight">Elevate Your Academic Standard.</h2>
+              <h2 className="text-4xl md:text-5xl font-black tracking-tight leading-tight">Ready to test your knowledge?</h2>
               <p className="text-slate-400 text-lg md:text-xl font-medium leading-relaxed">
-                Join the most trusted educational network in the region. Start exploring our free resources today.
+                Create a free account to unlock our AI Mock Tests, save your progress, and join thousands of students in the community forum.
               </p>
             </div>
             
             <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
               <Link 
-                href="/learn"
-                className="w-full sm:w-auto px-12 py-5 bg-white text-slate-900 rounded-2xl font-black uppercase text-[11px] tracking-widest hover:bg-slate-100 hover:-translate-y-1 transition-all"
+                href="/signup"
+                className="w-full sm:w-auto px-12 py-5 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-2xl font-black uppercase text-[11px] tracking-widest hover:scale-105 hover:shadow-xl hover:shadow-indigo-500/20 transition-all"
               >
-                Access Hub
+                Sign Up For Free
               </Link>
             </div>
 
-            <p className="text-[10px] font-bold uppercase tracking-[0.4em] text-slate-600">
-              Trusted by 10,000+ Students Across Jammu & Kashmir
+            <p className="text-[10px] font-bold uppercase tracking-[0.4em] text-slate-500">
+              No credit card required. Ever.
             </p>
           </div>
         </div>

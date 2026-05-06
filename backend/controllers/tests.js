@@ -151,3 +151,33 @@ exports.getTestResults = async (req, res, next) => {
     next(error);
   }
 };
+
+// @desc    Get all results for the logged in user
+// @route   GET /api/tests/my-results
+// @access  Private
+exports.getMyResults = async (req, res, next) => {
+  try {
+    const results = await Result.find({ user: req.user.id })
+      .populate('test', 'title exam subject')
+      .sort({ completedAt: -1 });
+
+    res.status(200).json({ success: true, count: results.length, data: results });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Get all results across the platform
+// @route   GET /api/tests/all-results
+// @access  Private/Admin
+exports.getAllResults = async (req, res, next) => {
+  try {
+    const results = await Result.find()
+      .populate('user', 'name email')
+      .populate('test', 'title exam')
+      .sort({ completedAt: -1 });
+    res.status(200).json({ success: true, count: results.length, data: results });
+  } catch (error) {
+    next(error);
+  }
+};
