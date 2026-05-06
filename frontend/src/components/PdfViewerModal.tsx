@@ -150,6 +150,12 @@ export default function PdfViewerModal({ url, name, onClose }: PdfViewerModalPro
                     document.getElementById(`pdf-page-${val}`)?.scrollIntoView({ behavior: 'smooth' });
                   }
                 }}
+                type="text" 
+                inputMode="numeric"
+                pattern="[0-9]*"
+                value={pageInput}
+                onChange={(e) => handlePageInputChange(e.target.value)}
+                onBlur={() => setPageInput(pageNumber.toString())}
                 className="w-10 bg-slate-700/50 rounded text-center text-xs font-bold text-white outline-none focus:ring-1 focus:ring-indigo-500 py-1 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
               />
               <span className="text-xs text-slate-400 font-bold pr-1">/ {numPages}</span>
@@ -157,20 +163,7 @@ export default function PdfViewerModal({ url, name, onClose }: PdfViewerModalPro
           )}
 
           <button
-            onClick={async () => {
-              try {
-                const res = await fetch(url);
-                const blob = await res.blob();
-                const bUrl = window.URL.createObjectURL(blob);
-                const a = document.createElement("a");
-                a.href = bUrl;
-                a.download = name.toLowerCase().endsWith(".pdf") ? name : `${name}.pdf`;
-                document.body.appendChild(a);
-                a.click();
-                a.remove();
-                window.URL.revokeObjectURL(bUrl);
-              } catch { window.open(url, "_blank"); }
-            }}
+            onClick={handleDownload}
             className="flex items-center gap-1 md:gap-2 px-3 md:px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all ml-1 md:ml-2"
           >
             <Download className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Download</span>
