@@ -39,6 +39,39 @@ export default function PdfViewerModal({ url, name, onClose }: PdfViewerModalPro
     setPageNumber(1);
   }
 
+  // Track local input for page number to allow "direct writing" without snapping
+  const [pageInput, setPageInput] = useState(pageNumber.toString());
+
+  useEffect(() => {
+    setPageInput(pageNumber.toString());
+  }, [pageNumber]);
+
+  const handlePageInputChange = (valStr: string) => {
+    setPageInput(valStr);
+    const val = parseInt(valStr);
+    if (!isNaN(val) && val >= 1 && val <= (numPages || 1)) {
+      setPageNumber(val);
+      if (isMobile) {
+        document.getElementById(`pdf-page-${val}`)?.scrollIntoView({ behavior: 'smooth' });
+      }
+    }
+  };
+
+  const handleDownload = async () => {
+    try {
+      const res = await fetch(url);
+      const blob = await res.blob();
+      const bUrl = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = bUrl;
+      a.download = name.toLowerCase().endsWith(".pdf") ? name : `${name}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(bUrl);
+    } catch { window.open(url, "_blank"); }
+  };
+
   // Prevent background scrolling when modal is open
   useEffect(() => {
     document.body.style.overflow = 'hidden';
@@ -101,14 +134,12 @@ export default function PdfViewerModal({ url, name, onClose }: PdfViewerModalPro
               </button>
               <div className="flex items-center">
                 <input
-                  type="number"
-                  min={1}
-                  max={numPages}
-                  value={pageNumber}
-                  onChange={(e) => {
-                    const val = parseInt(e.target.value);
-                    if (!isNaN(val) && val >= 1 && val <= numPages) setPageNumber(val);
-                  }}
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  value={pageInput}
+                  onChange={(e) => handlePageInputChange(e.target.value)}
+                  onBlur={() => setPageInput(pageNumber.toString())}
                   className="w-10 bg-slate-700/50 rounded text-center text-xs font-bold text-slate-300 outline-none focus:ring-1 focus:ring-indigo-500 px-1 py-0.5 mx-1 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 />
                 <span className="text-xs font-bold text-slate-400 mr-2">
@@ -139,17 +170,6 @@ export default function PdfViewerModal({ url, name, onClose }: PdfViewerModalPro
           {numPages && isMobile && (
             <div className="flex md:hidden items-center gap-1 bg-slate-800 rounded-lg p-1 border border-white/5 ml-1">
               <input 
-                type="number" 
-                min={1} 
-                max={numPages}
-                value={pageNumber}
-                onChange={(e) => {
-                  const val = parseInt(e.target.value);
-                  if (!isNaN(val) && val >= 1 && val <= numPages) {
-                    setPageNumber(val);
-                    document.getElementById(`pdf-page-${val}`)?.scrollIntoView({ behavior: 'smooth' });
-                  }
-                }}
                 type="text" 
                 inputMode="numeric"
                 pattern="[0-9]*"
